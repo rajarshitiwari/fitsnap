@@ -1779,8 +1779,7 @@ subroutine get_chi2
 
            !            write(222,*) i,l,ener/sys%data(i)%nats,sys%data(i)%ener(l)/sys%data(i)%nats,&
            !                 (ener-sys%data(i)%ener(l))/sys%data(i)%nats
-           write(222,*) i,l,ener,sys%data(i)%ener(l),&
-                (ener-sys%data(i)%ener(l))
+           write(222,*) i, l, ener, sys%data(i)%ener(l), (ener-sys%data(i)%ener(l)), sys%data(i)%nats
 
            ener=>null()
 
