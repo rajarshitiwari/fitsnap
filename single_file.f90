@@ -157,7 +157,7 @@ CONTAINS
     ALLOCATE(SYS%DATA(SYS%NDATA))
 
     DO I = 1, SYS%NDATA
-
+       
        IF (FIT_FORCES .AND. FIT_ENER) THEN
           READ(8, *) SYS%DATA(I)%INP_DATA, SYS%DATA(I)%FRAMES, SYS%DATA(I)%INP_TRAJ, SYS%DATA(I)%INP_ENER,&
                SYS%DATA(I)%INP_FORCES,SYS%DATA(I)%WEIGHT
@@ -810,9 +810,10 @@ subroutine get_lsmf_snap
 
   allocate(lmp(sys%ndata))
 
+  PRINT*,'INITIALIZING LAMMPS POINTERS: TOTAL = ', SYS%NDATA
   do i=1,sys%ndata
 
-     call lammps_open_no_mpi ('lmp -log none', lmp(i))
+     call lammps_open_no_mpi ('lmp -log none -screen none', lmp(i))
      call lammps_file (lmp(i),sys%inp)
      call lammps_command (lmp(i),'read_data '//trim(sys%data(i)%inp_data))
      call lammps_command (lmp(i),'group fitsnap type '//trim(snap_string2))
@@ -1111,7 +1112,7 @@ subroutine get_lsmf_snap
 
         if(allocated(map)) deallocate(map)
         if(allocated(id)) deallocate(id)
-
+        PRINT*,'COMPUTING BISPECTRUM: LINE => ', I, "FRAMES IN LINE: ", SYS%DATA(I)%FRAMES
      enddo   ! ciclo su data
 
      if(e0cs.eq.1)then
@@ -1718,6 +1719,7 @@ program fitsnap
 
      call sys%read_sys(new_datas,fit_ener,fit_forces)
      call get_lsmf_snap
+     PRINT*,'BEFORE GET_CHI2'
      call get_chi2
      if(refine) call refine_snap
      iter=iter+1
@@ -1808,7 +1810,7 @@ subroutine get_chi2
      call lammps_close (lmp(i))
      if(allocated(map)) deallocate(map)
      if(allocated(id)) deallocate(id)
-
+     PRINT*,'CALCULATING CHI2: LINE => ', I
   enddo   ! ciclo su data
 
   if(allocated(lmp)) deallocate(lmp)
