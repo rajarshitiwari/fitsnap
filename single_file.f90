@@ -120,450 +120,439 @@ CONTAINS
     RETURN
   END SUBROUTINE DEALLOC_KERNEL_GLOBAL
 
-  subroutine dealloc_kernel_kind(this)
-    implicit none
-    class(kernel_kind)    :: this
-    if( allocated(this%B) ) deallocate(this%B)
-    this%nenvs=0
-    this%sigma=0
-    return
-  end subroutine dealloc_kernel_kind
+  SUBROUTINE DEALLOC_KERNEL_KIND(THIS)
+    IMPLICIT NONE
+    CLASS(KERNEL_KIND)    :: THIS
+    IF( ALLOCATED(THIS%B) ) DEALLOCATE(THIS%B)
+    THIS%NENVS = 0
+    THIS%SIGMA = 0
+    RETURN
+  END SUBROUTINE DEALLOC_KERNEL_KIND
 
-  subroutine read_sys(sys,data_file,fit_ener,fit_forces)
-    implicit none
-    class(system)           :: sys
-    integer                 :: i,l,v,k,m,n
-    character(len=100)      :: label,data_file
-    logical                 :: fit_forces,fit_ener
+  SUBROUTINE READ_SYS(SYS, DATA_FILE, FIT_ENER, FIT_FORCES)
+    IMPLICIT NONE
+    CLASS(SYSTEM)           :: SYS
+    INTEGER                 :: I,L,V,K,M,N
+    CHARACTER(LEN=100)      :: LABEL,DATA_FILE
+    LOGICAL                 :: FIT_FORCES,FIT_ENER
 
-    if(allocated(sys%data))then
-       do i=1,sys%ndata
-          if(allocated(sys%data(i)%x)) deallocate(sys%data(i)%x)
-          if(allocated(sys%data(i)%ener)) deallocate(sys%data(i)%ener)
-          if(allocated(sys%data(i)%fx)) deallocate(sys%data(i)%fx)
-          if(allocated(sys%data(i)%fy)) deallocate(sys%data(i)%fy)
-          if(allocated(sys%data(i)%fz)) deallocate(sys%data(i)%fz)
-       enddo
-       deallocate(sys%data)
-    endif
+    IF (ALLOCATED(SYS%DATA)) THEN
+       DO I = 1, SYS%NDATA
+          IF (ALLOCATED(SYS%DATA(I)%X)   ) DEALLOCATE(SYS%DATA(I)%X   )
+          IF (ALLOCATED(SYS%DATA(I)%ENER)) DEALLOCATE(SYS%DATA(I)%ENER)
+          IF (ALLOCATED(SYS%DATA(I)%FX)  ) DEALLOCATE(SYS%DATA(I)%FX  )
+          IF (ALLOCATED(SYS%DATA(I)%FY)  ) DEALLOCATE(SYS%DATA(I)%FY  )
+          IF (ALLOCATED(SYS%DATA(I)%FZ)  ) DEALLOCATE(SYS%DATA(I)%FZ  )
+       END DO
+       DEALLOCATE(SYS%DATA)
+    END IF
 
-    open(8,file=trim(data_file))
+    OPEN(8,FILE=TRIM(DATA_FILE))
 
-    sys%tot_frames=0
-    sys%npar2fit=0
+    SYS%TOT_FRAMES = 0
+    SYS%NPAR2FIT = 0
 
-    read(8,*) sys%ndata
+    READ(8, *) SYS%NDATA
 
-    allocate(sys%data(sys%ndata))
+    ALLOCATE(SYS%DATA(SYS%NDATA))
 
-    do i=1,sys%ndata
+    DO I = 1, SYS%NDATA
 
-       if(fit_forces .and. fit_ener)then
-          read(8,*) sys%data(i)%inp_data,sys%data(i)%frames,sys%data(i)%inp_traj,sys%data(i)%inp_ener,&
-               sys%data(i)%inp_forces,sys%data(i)%weight
-       endif
+       IF (FIT_FORCES .AND. FIT_ENER) THEN
+          READ(8, *) SYS%DATA(I)%INP_DATA, SYS%DATA(I)%FRAMES, SYS%DATA(I)%INP_TRAJ, SYS%DATA(I)%INP_ENER,&
+               SYS%DATA(I)%INP_FORCES,SYS%DATA(I)%WEIGHT
+       END IF
+       IF (FIT_ENER .AND. (.NOT. FIT_FORCES) ) THEN
+          READ(8, *) SYS%DATA(I)%INP_DATA, SYS%DATA(I)%FRAMES, SYS%DATA(I)%INP_TRAJ, &
+               SYS%DATA(I)%INP_ENER, SYS%DATA(I)%WEIGHT
+       END IF
+       IF ((.NOT. FIT_ENER) .AND. FIT_FORCES ) THEN
+          READ(8, *) SYS%DATA(I)%INP_DATA, SYS%DATA(I)%FRAMES, SYS%DATA(I)%INP_TRAJ, &
+               SYS%DATA(I)%INP_FORCES, SYS%DATA(I)%WEIGHT
+       END IF
 
-       if(fit_ener .and.  (.not. fit_forces) )then
-          read(8,*) sys%data(i)%inp_data,sys%data(i)%frames,sys%data(i)%inp_traj, &
-               sys%data(i)%inp_ener,sys%data(i)%weight
-       endif
+       OPEN(12, FILE=SYS%DATA(I)%INP_TRAJ)
 
-       if((.not. fit_ener) .and. fit_forces )then
-          read(8,*) sys%data(i)%inp_data,sys%data(i)%frames,sys%data(i)%inp_traj, &
-               sys%data(i)%inp_forces,sys%data(i)%weight
-       endif
+       IF(FIT_ENER)THEN
+          ALLOCATE(SYS%DATA(I)%ENER(SYS%DATA(I)%FRAMES))
+          OPEN(13, FILE=SYS%DATA(I)%INP_ENER)
+       END IF
 
-       open(12,file=sys%data(i)%inp_traj)
+       IF (FIT_FORCES) THEN
+          OPEN(14, FILE=SYS%DATA(I)%INP_FORCES)
+       END IF
 
-       if(fit_ener)then
-          allocate(sys%data(i)%ener(sys%data(i)%frames))
-          open(13,file=sys%data(i)%inp_ener)
-       endif
+       DO L = 1, SYS%DATA(I)%FRAMES
 
-       if(fit_forces)then
-          open(14,file=sys%data(i)%inp_forces)
-       endif
+          SYS%TOT_FRAMES = SYS%TOT_FRAMES + 1
 
-       do l=1,sys%data(i)%frames
+          READ(12, *) SYS%DATA(I)%NATS
+          READ(12, *)
+          IF (FIT_FORCES) THEN
+             READ(14, *)
+             READ(14, *)
+          END IF
 
-          sys%tot_frames=sys%tot_frames+1
+          IF(.NOT. ALLOCATED(SYS%DATA(I)%LABEL)) THEN
+             ALLOCATE(SYS%DATA(I)%LABEL(SYS%DATA(I)%NATS))
+          END IF
+          IF (.NOT. ALLOCATED(SYS%DATA(I)%X)) THEN
+             ALLOCATE(SYS%DATA(I)%X(SYS%DATA(I)%FRAMES, 3*SYS%DATA(I)%NATS))
+          END IF
+          IF(.NOT. ALLOCATED(SYS%DATA(I)%FX) .AND. FIT_FORCES)THEN
+             ALLOCATE(SYS%DATA(I)%FX(SYS%DATA(I)%FRAMES, SYS%DATA(I)%NATS))
+          END IF
+          IF(.NOT. ALLOCATED(SYS%DATA(I)%FY) .AND. FIT_FORCES)THEN
+             ALLOCATE(SYS%DATA(I)%FY(SYS%DATA(I)%FRAMES, SYS%DATA(I)%NATS))
+          END IF
+          IF(.NOT. ALLOCATED(SYS%DATA(I)%FZ) .AND. FIT_FORCES)THEN
+             ALLOCATE(SYS%DATA(I)%FZ(SYS%DATA(I)%FRAMES, SYS%DATA(I)%NATS))
+          END IF
 
-          read(12,*) sys%data(i)%nats
-          read(12,*)
-          if(fit_forces)then
-             read(14,*)
-             read(14,*)
-          endif
+          V = 1
+          DO K = 1, SYS%DATA(I)%NATS
+             !
+             READ(12, *) SYS%DATA(I)%LABEL(K), SYS%DATA(I)%X(L,V), SYS%DATA(I)%X(L,V+1), SYS%DATA(I)%X(L,V+2)
+             !
+             IF(FIT_FORCES)THEN
+                READ(14, *) SYS%DATA(I)%FX(L,K), SYS%DATA(I)%FY(L,K), SYS%DATA(I)%FZ(L,K)
+                SYS%NPAR2FIT = SYS%NPAR2FIT + 3
+             END IF
+             !
+             V = V + 3
+             !
+          END DO
 
-          if(.not.allocated(sys%data(i)%label))then
-             allocate(sys%data(i)%label(sys%data(i)%nats))
-          endif
-          if(.not.allocated(sys%data(i)%x))then
-             allocate(sys%data(i)%x(sys%data(i)%frames,3*sys%data(i)%nats))
-          endif
-          if(.not.allocated(sys%data(i)%fx) .and. fit_forces)then
-             allocate(sys%data(i)%fx(sys%data(i)%frames,sys%data(i)%nats))
-          endif
-          if(.not.allocated(sys%data(i)%fy) .and. fit_forces)then
-             allocate(sys%data(i)%fy(sys%data(i)%frames,sys%data(i)%nats))
-          endif
-          if(.not.allocated(sys%data(i)%fz) .and. fit_forces)then
-             allocate(sys%data(i)%fz(sys%data(i)%frames,sys%data(i)%nats))
-          endif
+          IF (FIT_ENER) THEN
+             READ(13, *) SYS%DATA(I)%ENER(L)
+             SYS%NPAR2FIT = SYS%NPAR2FIT + 1
+          END IF
 
-          v=1
-          do k=1,sys%data(i)%nats
+       END DO
 
-             read(12,*) sys%data(i)%label(k),sys%data(i)%x(l,v),sys%data(i)%x(l,v+1),sys%data(i)%x(l,v+2)
+       CLOSE(12)
+       IF(FIT_ENER) CLOSE(13)
+       IF(FIT_FORCES) CLOSE(14)
 
-             if(fit_forces)then
-                read(14,*) sys%data(i)%fx(l,k),sys%data(i)%fy(l,k),sys%data(i)%fz(l,k)
-                sys%npar2fit=sys%npar2fit+3
-             endif
-             v=v+3
+    END DO
 
-          enddo
+    CLOSE(8)
 
-          if(fit_ener)then
-             read(13,*) sys%data(i)%ener(l)
-             sys%npar2fit=sys%npar2fit+1
-          endif
-
-       enddo
-
-       close(12)
-       if(fit_ener) close(13)
-       if(fit_forces) close(14)
-
-    enddo
-
-    close(8)
-
-    return
-  end subroutine read_sys
+    RETURN
+  END SUBROUTINE READ_SYS
 
 
-end module fit_lammps_class
+END MODULE FIT_LAMMPS_CLASS
 
-module common_var
-  use, intrinsic :: ISO_C_binding, only : C_double, C_ptr, C_int
-  use fit_lammps_class
+MODULE COMMON_VAR
+  USE, INTRINSIC :: ISO_C_BINDING, ONLY : C_DOUBLE, C_PTR, C_INT
+  USE FIT_LAMMPS_CLASS
   !
-  TYPE(system)                   :: sys
-  type (C_ptr), allocatable      :: lmp(:)
-  type(kernel_global)            :: kernel
-  logical                        :: fit_forces=.false.,pca=.false.,cs=.false.,fit_ener=.false.
-  logical                        :: fit_tensors=.true.
-  logical                        :: skip_fit=.false.,print_bi=.false.,refine=.false.,metrix=.true.
-  real(8)               :: cm_val=1.0d0,refine_temp,thr_kernel=0.5d0
-  integer                        :: refine_maxiter,iter,tens_order,e0cs=0
+  TYPE(SYSTEM)              :: SYS
+  TYPE (C_PTR), ALLOCATABLE :: LMP(:)
+  TYPE(KERNEL_GLOBAL)       :: KERNEL
+  LOGICAL                   :: FIT_FORCES = .FALSE., PCA = .FALSE., CS=.FALSE., FIT_ENER = .FALSE.
+  LOGICAL                   :: FIT_TENSORS = .TRUE.
+  LOGICAL                   :: SKIP_FIT = .FALSE., PRINT_BI = .FALSE., REFINE= .FALSE., METRIX = .TRUE.
+  REAL(8)                   :: CM_VAL = 1.0D0, REFINE_TEMP, THR_KERNEL = 0.5D0
+  INTEGER                   :: REFINE_MAXITER, ITER, TENS_ORDER, E0CS = 0
   !
-end module common_var
+END MODULE COMMON_VAR
 
-module lapack_inverse
-  implicit none
+MODULE LAPACK_INVERSE
+  IMPLICIT NONE
 
-contains
+CONTAINS
 
-  subroutine mat_inv(X,N)
-    implicit none
-    integer                                         :: info,lwork,N,ialloc
-    integer, dimension(N)                           :: ipiv
-    real(8),  dimension(N,N)               :: X_inv
-    double complex,  dimension(N,N)                 :: cX_inv
-    CLASS(*), intent(in), dimension(N,N)            :: X
-    real(8), allocatable, dimension(:)     :: work
+  SUBROUTINE MAT_INV(X, N)
+    IMPLICIT NONE
+    INTEGER                              :: INFO,LWORK,N,IALLOC
+    INTEGER, DIMENSION(N)                :: IPIV
+    REAL(8), DIMENSION(N,N)              :: X_INV
+    COMPLEX(8), DIMENSION(N,N)           :: CX_INV
+    CLASS(*), INTENT(IN), DIMENSION(N,N) :: X
+    REAL(8), ALLOCATABLE, DIMENSION(:)   :: WORK
 
+    SELECT TYPE(X)
 
-    select type(X)
+    TYPE IS (COMPLEX(8))
 
-    type is (complex(8))
+       CX_INV = X
+       
+       LWORK = (N)**2
+       ALLOCATE(WORK(LWORK), STAT=IALLOC)
+       CALL ZGETRF(N, N, CX_INV, N, IPIV, INFO)
+       CALL ZGETRI(N, CX_INV, N, IPIV, WORK, LWORK, INFO)
 
-       cX_inv=X
+       X = CX_INV
 
-       lwork=(N)**2
-       allocate(work(lwork),stat=ialloc)
-       call zgetrf(N,N,cX_inv,N,IPIV,info)
-       call zgetri(N,cX_inv,N,IPIV,work,lwork,info)
+    TYPE IS (REAL(8))
 
-       X=cX_inv
+       X_INV = X
 
-    type is (real(8))
+       LWORK = (N)**2
+       ALLOCATE(WORK(LWORK), STAT=IALLOC)
+       CALL DGETRF(N, N, X_INV, N, IPIV, INFO)
+       CALL DGETRI(N, X_INV, N, IPIV, WORK, LWORK, INFO)
 
-       X_inv=X
+       X = X_INV
 
-       lwork=(N)**2
-       allocate(work(lwork),stat=ialloc)
-       call dgetrf(N,N,X_inv,N,IPIV,info)
-       call dgetri(N,X_inv,N,IPIV,work,lwork,info)
+    END SELECT
 
-       X=X_inv
+    RETURN
+  END SUBROUTINE MAT_INV
 
-    end select
+END MODULE LAPACK_INVERSE
 
-    return
-  end subroutine mat_inv
+MODULE LAPACK_DIAG_SIMM
+  IMPLICIT NONE
 
-end module lapack_inverse
+CONTAINS
 
-module lapack_diag_simm
-  implicit none
-
-contains
-
-  subroutine new_diag(N,A,W)
-    implicit none
-    integer                                      :: i,j,INFO,s,k,N,ialloc
-    integer                                      :: l,inf,infr
-    CLASS(*),  dimension(N,N)                    :: A
-    DOUBLE COMPLEX,    DIMENSION(N*(N+1)/2)      :: AP
-    REAL(8),  DIMENSION(N)              :: W
-    REAL(8), ALLOCATABLE,  DIMENSION(:) :: work
-    DOUBLE COMPLEX,   ALLOCATABLE,  DIMENSION(:) :: cwork
-
-
-    select type(A)
-
-    type is (real(8))
+  SUBROUTINE NEW_DIAG(N, A, W)
+    IMPLICIT NONE
+    INTEGER                               :: I, J, INFO, S, K, N, IALLOC
+    INTEGER                               :: L, INF, INFR
+    CLASS(*), DIMENSION(N,N)              :: A
+    COMPLEX(8), DIMENSION(N*(N+1)/2)      :: AP
+    REAL(8),  DIMENSION(N)                :: W
+    REAL(8), ALLOCATABLE, DIMENSION(:)    :: WORK
+    COMPLEX(8), ALLOCATABLE, DIMENSION(:) :: CWORK
 
 
-       l=(3*N-1)
-       allocate(work(l),stat=ialloc)
-       call dsyev('V','U',N,A,N,W,work,l,infr)
-       deallocate(work)
-       if(infr.ne.0)then
-          write(*,*) 'dsyev diagonalization failed'
+    SELECT TYPE(A)
+       !
+    TYPE IS (REAL(8))
+       L = (3 * N - 1)
+       ALLOCATE(WORK(L), STAT=IALLOC)
+       CALL DSYEV('V', 'U', N, A, N, W, WORK, L, INFR)
+       DEALLOCATE(WORK)
+       IF (INFR .NE. 0) THEN
+          WRITE(*, *) 'dsyev diagonalization failed'
           FLUSH(6)
-          stop
-       endif
+          STOP
+       END IF
+       !
+    TYPE IS (COMPLEX(8))
+       !
+       S = 1
+       DO J = 1, N
+          DO I = 1, J
+             AP(S) = A(I,J)
+             S = S + 1
+          END DO
+       END DO
+       !
+       L = (2 * N - 1) + 1000
+       ALLOCATE(CWORK(L), STAT=IALLOC)
+       K = (3 * N - 2) + 1000
+       ALLOCATE(WORK(K), STAT=IALLOC)
+       CALL ZHPEV('V', 'U', N, AP, W, A, N, CWORK, WORK, INF)
+       DEALLOCATE(CWORK)
+       DEALLOCATE(WORK)
+       IF (INF .NE. 0) THEN
+          WRITE(*,*) 'zhpev diagonalization failed'
+          STOP
+       END IF
+       !
+    END SELECT
 
-    type is (complex(8))
+    RETURN
+  END SUBROUTINE NEW_DIAG
 
-       s=1
-       do j=1,N
-          do i=1,j
-             AP(s)=A(i,j)
-             s=s+1
-          enddo
-       enddo
+END MODULE LAPACK_DIAG_SIMM
 
-       l=(2*N-1)+1000
-       allocate(cwork(l),stat=ialloc)
-       k=(3*N-2)+1000
-       allocate(work(k),stat=ialloc)
-       call zhpev('V','U',N,AP,W,A,N,cwork,work,inf)
-       deallocate(cwork)
-       deallocate(work)
-       if(inf.ne.0)then
-          write(*,*) 'zhpev diagonalization failed'
-          stop
-       endif
+MODULE LAPACK_DIAG_ASIMM
+  IMPLICIT NONE
 
-    end select
+CONTAINS
 
-    return
-  end subroutine new_diag
+  SUBROUTINE NEW_DIAG2(N, A, W) ! NO INTENT?
+    IMPLICIT NONE
+    INTEGER                             :: I, J, INFO, S, K, N, IALLOC
+    INTEGER                             :: L, INF, INFR
+    CLASS(*), DIMENSION(N,N)            :: A
+    COMPLEX(8), DIMENSION(N*(N+1)/2)    :: AP
+    COMPLEX(8), DIMENSION(N,N)          :: VRI, VLI
+    COMPLEX(8), DIMENSION(N)            :: W
+    REAL(8), DIMENSION(N)               :: WR, WI
+    REAL(8), DIMENSION(N,N)             :: VL, VR
+    REAL(8), ALLOCATABLE,  DIMENSION(:) :: WORK
+    COMPLEX(8), ALLOCATABLE,  DIMENSION(:) :: CWORK
 
-end module lapack_diag_simm
-
-module lapack_diag_asimm
-  implicit none
-
-contains
-
-  subroutine new_diag2(N,A,W)
-    implicit none
-    integer                                      :: i,j,INFO,s,k,N,ialloc
-    integer                                      :: l,inf,infr
-    CLASS(*),  dimension(N,N)                    :: A
-    DOUBLE COMPLEX,    DIMENSION(N*(N+1)/2)      :: AP
-    DOUBLE COMPLEX,    DIMENSION(N,N)            :: VRI,VLI
-    DOUBLE COMPLEX,    DIMENSION(N)              :: W
-    REAL(8),  DIMENSION(N)              :: WR,WI
-    REAL(8),  DIMENSION(N,N)            :: VL,VR
-    REAL(8), ALLOCATABLE,  DIMENSION(:) :: work
-    DOUBLE COMPLEX,   ALLOCATABLE,  DIMENSION(:) :: cwork
-
-
-    select type(A)
-
-    type is (real(8))
-
-
-       l=4*N
-       allocate(work(l),stat=ialloc)
-       call dgeev('V','V',N,A,N,WR,WI,VL,N,VR,N,work,l,infr)
-       deallocate(work)
-       if(infr.ne.0)then
-          write(*,*) 'dgeev diagonalization failed'
+    SELECT TYPE(A)
+       !
+    TYPE IS (REAL(8))
+       !
+       L = 4 * N
+       ALLOCATE(WORK(L), STAT=IALLOC)
+       CALL DGEEV('V','V', N, A, N, WR, WI, VL, N, VR, N, WORK, L, INFR)
+       DEALLOCATE(WORK)
+       IF (INFR .NE. 0) THEN
+          WRITE(*,*) 'dgeev diagonalization failed'
           FLUSH(6)
-          stop
-       endif
+          STOP
+       END IF
+       !
+       DO J = 1, N
+          W(J) = CMPLX(WR(J), WI(J), 8)
+       END DO
+       !
+       A = VR
+       !
+    TYPE IS (COMPLEX(8))
 
-       do j=1,N
-          W(j)=CMPLX(WR(j),WI(j),8)
-       enddo
+       L = 6 * N
+       ALLOCATE(CWORK(L), STAT=IALLOC)
+       ALLOCATE(WORK(L), STAT=IALLOC)
+       CALL ZGEEV('V', 'V', N, A, N, W, VLI, N, VRI, N, CWORK, L, WORK, INFR)
+       DEALLOCATE(CWORK)
+       DEALLOCATE(WORK)
+       IF (INF .NE. 0) THEN
+          WRITE(*,*) 'zgeev diagonalization failed'
+       END IF
+       A = VLI
+    END SELECT
 
-       A=VR
+    RETURN
+  END SUBROUTINE NEW_DIAG2
 
-    type is (complex(8))
+END MODULE LAPACK_DIAG_ASIMM
 
-       l=6*N
-       allocate(cwork(l),stat=ialloc)
-       allocate(work(l),stat=ialloc)
-       call zgeev('V','V',N,A,N,W,VLI,N,VRI,N,cwork,l,work,infr)
-       deallocate(cwork)
-       deallocate(work)
-       if(inf.ne.0)then
-          write(*,*) 'zgeev diagonalization failed'
-       endif
-       A=VLI
+MODULE LISTS_CLASS
+  IMPLICIT NONE
 
-    end select
+  TYPE :: LIST_NODE
+     CLASS(*), POINTER      :: KEY => NULL()
+     CLASS(LIST_NODE), POINTER  :: NEXT => NULL()
+     CLASS(LIST_NODE), POINTER  :: PREV => NULL()
+  END TYPE LIST_NODE
+  
+  TYPE LIST
+     CLASS(LIST_NODE), POINTER :: HEAD => NULL()
+     CLASS(LIST_NODE), POINTER :: TAIL => NULL()
+     CLASS(LIST_NODE), POINTER :: NODE => NULL()
+     INTEGER                   :: NELEM
+   CONTAINS
+     PROCEDURE                 :: INIT => INIT_LIST
+     PROCEDURE                 :: SKIP => SKIP_NODE
+     PROCEDURE                 :: REW  => REWIND_NODE
+     PROCEDURE                 :: RM => REMOVE_NODE
+     PROCEDURE                 :: REBOOT => REBOOT_LIST
+     PROCEDURE                 :: DELETE => DESTROY_LIST
+     PROCEDURE                 :: ADD_NODE
+     PROCEDURE                 :: RD_DBL_NODE
+     PROCEDURE                 :: RD_CMPLX_NODE
+     PROCEDURE                 :: RD_INT_NODE
+     GENERIC                   :: RD_VAL => RD_INT_NODE, RD_DBL_NODE, RD_CMPLX_NODE
+  END TYPE LIST
 
-    return
-  end subroutine new_diag2
-
-end module lapack_diag_asimm
-
-module lists_class
-  implicit none
-
-
-  type :: list_node
-     class(*), pointer      :: key => null()
-     class(list_node), pointer  :: next => null()
-     class(list_node), pointer  :: prev => null()
-  end type list_node
-
-  type list
-     class(list_node), pointer :: head => null()
-     class(list_node), pointer :: tail => null()
-     class(list_node), pointer :: node => null()
-     integer                   :: nelem
-   contains
-     procedure                 :: init => init_list
-     procedure                 :: skip => skip_node
-     procedure                 :: rew  => rewind_node
-     procedure                 :: rm => remove_node
-     procedure                 :: reboot => reboot_list
-     procedure                 :: delete => destroy_list
-     procedure                 :: add_node
-     procedure                 :: rd_dbl_node
-     procedure                 :: rd_cmplx_node
-     procedure                 :: rd_int_node
-     generic                   :: rd_val => rd_int_node,rd_dbl_node,rd_cmplx_node
-  end type list
-
-
-contains
+CONTAINS
 
 
 
-!!!!!   lists general functions
+!!!!!   LISTS GENERAL FUNCTIONS
 
-  subroutine skip_node(this_list)
-    implicit none
-    class(list)  :: this_list
-    if( associated(this_list%node%next) ) then
-       this_list%node=>this_list%node%next
-    else
-       this_list%node=>this_list%tail
-    endif
-    return
-  end subroutine skip_node
+  SUBROUTINE SKIP_NODE(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)  :: THIS_LIST
+    IF( ASSOCIATED(THIS_LIST%NODE%NEXT) ) THEN
+       THIS_LIST%NODE => THIS_LIST%NODE%NEXT
+    ELSE
+       THIS_LIST%NODE=>THIS_LIST%TAIL
+    END IF
+    RETURN
+  END SUBROUTINE SKIP_NODE
 
-  subroutine destroy_list(this_list)
-    implicit none
-    class(list) :: this_list
-    do while (this_list%nelem.gt.0)
-       this_list%node=>this_list%head
-       call this_list%rm()
-    enddo
-    return
-  end subroutine destroy_list
+  SUBROUTINE DESTROY_LIST(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST) :: THIS_LIST
+    DO WHILE (THIS_LIST%NELEM .GT. 0)
+       THIS_LIST%NODE => THIS_LIST%HEAD
+       CALL THIS_LIST%RM()
+    END DO
+    RETURN
+  END SUBROUTINE DESTROY_LIST
 
-  subroutine remove_node(this_list)
-    implicit none
-    class(list)  :: this_list
-    class(list_node), pointer :: tmp_node
+  SUBROUTINE REMOVE_NODE(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)  :: THIS_LIST
+    CLASS(LIST_NODE), POINTER :: TMP_NODE
 
-    if (this_list%nelem .eq. 0) return
+    IF (THIS_LIST%NELEM .EQ. 0) RETURN
 
-    if (this_list%nelem .eq. 1)then
+    IF (THIS_LIST%NELEM .EQ. 1)THEN
 
-       if(associated(this_list%node%key)) then
-          deallocate(this_list%node%key)
-       endif
-       if(associated(this_list%node)) then
-          deallocate(this_list%node)
-       endif
-       this_list%node=>null()
-       this_list%head=>null()
-       this_list%tail=>null()
+       IF (ASSOCIATED(THIS_LIST%NODE%KEY)) THEN
+          DEALLOCATE(THIS_LIST%NODE%KEY)
+       END IF
+       IF (ASSOCIATED(THIS_LIST%NODE)) THEN
+          DEALLOCATE(THIS_LIST%NODE)
+       END IF
+       THIS_LIST%NODE => NULL()
+       THIS_LIST%HEAD => NULL()
+       THIS_LIST%TAIL => NULL()
 
-       this_list%nelem=this_list%nelem-1
+       THIS_LIST%NELEM = THIS_LIST%NELEM - 1
+       
+    ELSE
 
-    else
+       IF( .NOT. ASSOCIATED(THIS_LIST%NODE%NEXT) .AND. &
+            ASSOCIATED(THIS_LIST%NODE%PREV) ) THEN
+          THIS_LIST%TAIL => THIS_LIST%NODE%PREV
+          TMP_NODE       => THIS_LIST%NODE
+          THIS_LIST%NODE => THIS_LIST%TAIL
+          THIS_LIST%TAIL%NEXT => NULL()
+          IF (ASSOCIATED(TMP_NODE%KEY)) THEN
+             DEALLOCATE(TMP_NODE%KEY)
+             TMP_NODE%KEY => NULL()
+          END IF
+          IF (ASSOCIATED(TMP_NODE)) THEN
+             DEALLOCATE(TMP_NODE)
+             TMP_NODE => NULL()
+          END IF
+          THIS_LIST%NELEM = THIS_LIST%NELEM - 1
+       END IF
 
-       if( .not. associated(this_list%node%next) .and. &
-            associated(this_list%node%prev) ) then
-          this_list%tail=>this_list%node%prev
-          tmp_node=>this_list%node
-          this_list%node=>this_list%tail
-          this_list%tail%next=>null()
-          if(associated(tmp_node%key)) then
-             deallocate(tmp_node%key)
-             tmp_node%key=>null()
-          endif
-          if(associated(tmp_node)) then
-             deallocate(tmp_node)
-             tmp_node=>null()
-          endif
-          this_list%nelem=this_list%nelem-1
-       endif
+       IF( .NOT. ASSOCIATED(THIS_LIST%NODE%PREV) .AND. &
+            ASSOCIATED(THIS_LIST%NODE%NEXT) ) THEN
+          THIS_LIST%HEAD => THIS_LIST%NODE%NEXT
+          TMP_NODE       => THIS_LIST%NODE
+          THIS_LIST%NODE => THIS_LIST%HEAD
+          THIS_LIST%HEAD%PREV => NULL()
+          IF (ASSOCIATED(TMP_NODE%KEY)) THEN
+             DEALLOCATE(TMP_NODE%KEY)
+             TMP_NODE%KEY => NULL()
+          END IF
+          IF (ASSOCIATED(TMP_NODE)) THEN
+             DEALLOCATE(TMP_NODE)
+             TMP_NODE => NULL()
+          END IF
+          THIS_LIST%NELEM = THIS_LIST%NELEM - 1
+       END IF
 
+       IF( ASSOCIATED(THIS_LIST%NODE%NEXT) .AND. &
+            ASSOCIATED(THIS_LIST%NODE%PREV) ) THEN
+          THIS_LIST%NODE%PREV%NEXT => THIS_LIST%NODE%NEXT
+          THIS_LIST%NODE%NEXT%PREV => THIS_LIST%NODE%PREV
+          TMP_NODE => THIS_LIST%NODE
+          TMP_NODE%KEY => THIS_LIST%NODE%KEY
+          THIS_LIST%NODE => THIS_LIST%NODE%NEXT
+          IF (ASSOCIATED(TMP_NODE%KEY)) THEN
+             DEALLOCATE(TMP_NODE%KEY)
+             TMP_NODE%KEY => NULL()
+          END IF
+          IF(ASSOCIATED(TMP_NODE)) THEN
+             DEALLOCATE(TMP_NODE)
+             TMP_NODE => NULL()
+          END IF
+          THIS_LIST%NELEM = THIS_LIST%NELEM - 1
+       END IF
 
-       if( .not. associated(this_list%node%prev) .and. &
-            associated(this_list%node%next) ) then
-          this_list%head=>this_list%node%next
-          tmp_node=>this_list%node
-          this_list%node=>this_list%head
-          this_list%head%prev=>null()
-          if(associated(tmp_node%key)) then
-             deallocate(tmp_node%key)
-             tmp_node%key=>null()
-          endif
-          if(associated(tmp_node)) then
-             deallocate(tmp_node)
-             tmp_node=>null()
-          endif
-          this_list%nelem=this_list%nelem-1
-       endif
+    END IF
 
-       if( associated(this_list%node%next) .and. &
-            associated(this_list%node%prev) ) then
-          this_list%node%prev%next=>this_list%node%next
-          this_list%node%next%prev=>this_list%node%prev
-          tmp_node=>this_list%node
-          tmp_node%key=>this_list%node%key
-          this_list%node=>this_list%node%next
-          if(associated(tmp_node%key)) then
-             deallocate(tmp_node%key)
-             tmp_node%key=>null()
-          endif
-          if(associated(tmp_node)) then
-             deallocate(tmp_node)
-             tmp_node=>null()
-          endif
-          this_list%nelem=this_list%nelem-1
-       endif
-
-    endif
-
-    return
-  end subroutine remove_node
-
+    RETURN
+  END SUBROUTINE REMOVE_NODE
 
   subroutine rewind_node(this_list)
     implicit none
