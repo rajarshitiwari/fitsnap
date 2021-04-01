@@ -902,53 +902,53 @@ SUBROUTINE GET_LSMF_SNAP
 
   IF (.NOT. SKIP_FIT) THEN
 
-     V = 1
+     V  = 1
      VV = 1
 
-     do i=1,sys%ndata
+     DO I = 1, SYS%NDATA
 
-        do l=1,sys%data(i)%frames
+        DO L = 1, SYS%DATA(I)%FRAMES
 
-           call lammps_scatter_atoms (lmp(i),'x',sys%data(i)%x(l,1:3*sys%data(i)%nats))
-           call lammps_command (lmp(i), 'run 0')
-           call lammps_extract_compute (kind_nat, lmp(i), 'type', 1, 1)
-           call lammps_extract_compute (ener, lmp(i), 'sna_e', 1, 2)
-           call lammps_extract_compute (Eref, lmp(i), 'pe_ener', 0, 0)
-           if(.not. allocated(id)) allocate(id(sys%data(i)%nats))
-           if(.not. allocated(map)) allocate(map(sys%data(i)%nats))
-           call lammps_extract_compute (id_dbl, lmp(i), 'id', 1, 1)
+           CALL LAMMPS_SCATTER_ATOMS (LMP(I), 'x', SYS%DATA(I)%X(L, 1:3*SYS%DATA(I)%NATS))
+           CALL LAMMPS_COMMAND (LMP(I), 'run 0')
+           CALL LAMMPS_EXTRACT_COMPUTE (KIND_NAT, LMP(I), 'type', 1, 1)
+           CALL LAMMPS_EXTRACT_COMPUTE (ENER, LMP(I), 'sna_e', 1, 2)
+           CALL LAMMPS_EXTRACT_COMPUTE (EREF, LMP(I), 'pe_ener', 0, 0)
+           IF (.NOT. ALLOCATED(ID) ) ALLOCATE(ID(SYS%DATA(I)%NATS))
+           IF (.NOT. ALLOCATED(MAP)) ALLOCATE(MAP(SYS%DATA(I)%NATS))
+           CALL LAMMPS_EXTRACT_COMPUTE (ID_DBL, LMP(I), 'id', 1, 1)
 
-           id=INT(id_dbl)
-           id_dbl=>null()
+           ID = INT(ID_DBL)
+           ID_DBL => NULL()
 
-           do k=1,sys%data(i)%nats
-              map(id(k))=k
-           enddo
+           DO K = 1, SYS%DATA(I)%NATS
+              MAP(ID(K)) = K
+           END DO
 
-           if(l.eq.1)then
+           IF (L .EQ. 1) THEN
 
-              npar=size(ener,1)+1
-              kind_count=0
+              NPAR = SIZE(ENER, 1) + 1
+              KIND_COUNT = 0
 
-              do t=1,sys%data(i)%nats
-                 kind_count(nint(kind_nat(t)))=kind_count(nint(kind_nat(t)))+1
-              enddo
+              DO T=1,SYS%DATA(I)%NATS
+                 KIND_COUNT(NINT(KIND_NAT(T)))=KIND_COUNT(NINT(KIND_NAT(T)))+1
+              ENDDO
 
-              dimA=npar*nkinds
-              dimB=npar2fit
+              DIMA = NPAR * NKINDS
+              DIMB = NPAR2FIT
 
-              if(cs) dimB=dimB+(npar-1)*nkinds
-              if(e0cs.eq.1) dimB=dimB+nkinds-1
-              if(e0cs.eq.2) dimB=dimB+nkinds
+              IF (CS) DIMB = DIMB + (NPAR-1) * NKINDS
+              IF (E0CS .EQ. 1) DIMB = DIMB + NKINDS - 1
+              IF (E0CS .EQ. 2) DIMB = DIMB + NKINDS
 
-              if(.not.allocated(B))then
-                 allocate(B(dimB))
-                 B=0.0d0
-              endif
-              if(.not.allocated(A))then
-                 allocate(A(dimB,dimA))
-                 A=0.0d0
-              endif
+              IF (.NOT. ALLOCATED(B)) THEN
+                 ALLOCATE(B(DIMB))
+                 B = 0.0D0
+              END IF
+              IF (.NOT. ALLOCATED(A)) THEN
+                 ALLOCATE(A(DIMB, DIMA))
+                 A = 0.0D0
+              END IF
 
               !            if(.not.cs)then
               !             if(.not.allocated(B)) allocate(B(npar2fit+nkinds-1))
@@ -972,194 +972,193 @@ SUBROUTINE GET_LSMF_SNAP
               !             endif
               !            endif
 
-              if(pca)then
-                 open(1313,file='PCA.dat')
+              IF (PCA) THEN
+                 OPEN(1313, FILE = 'PCA.dat')
                  !             if(.not.allocated(A2)) allocate(A2(tot_frames,(npar-1)*nkinds))
                  !             if(.not.allocated(BB)) allocate(BB(tot_frames))
                  !             if(.not.allocated(W)) allocate(W((npar-1)*nkinds))
                  !             if(.not.allocated(Y)) allocate(Y(tot_frames,(npar-1)*nkinds))
                  !             if(.not.allocated(YY)) allocate(YY((npar-1)*nkinds,(npar-1)*nkinds))
                  !             if(.not.allocated(Tval)) allocate(Tval(tot_frames,(npar-1)*nkinds))
-                 if(.not.allocated(A2)) allocate(A2(tot_frames,(npar-1)))
-                 if(.not.allocated(BB)) allocate(BB(tot_frames))
-                 if(.not.allocated(W)) allocate(W((npar-1)))
-                 if(.not.allocated(Y)) allocate(Y(tot_frames,(npar-1)))
-                 if(.not.allocated(YY)) allocate(YY((npar-1),(npar-1)))
-                 if(.not.allocated(Tval)) allocate(Tval(tot_frames,(npar-1)))
-              endif
+                 IF (.NOT. ALLOCATED(A2)  ) ALLOCATE(A2(TOT_FRAMES, NPAR-1))
+                 IF (.NOT. ALLOCATED(BB)  ) ALLOCATE(BB(TOT_FRAMES))
+                 IF (.NOT. ALLOCATED(W)   ) ALLOCATE(W(NPAR-1))
+                 IF (.NOT. ALLOCATED(Y)   ) ALLOCATE(Y(TOT_FRAMES, NPAR-1))
+                 IF (.NOT. ALLOCATED(YY)  ) ALLOCATE(YY(NPAR-1, NPAR-1))
+                 IF (.NOT. ALLOCATED(TVAL)) ALLOCATE(TVAL(TOT_FRAMES, NPAR-1))
+              END IF
 
-           endif
+           END IF
+           
+           IF (FIT_ENER) THEN
+              
+              S = 1
+              DO K = 1, NKINDS
+                 A(V, S) = KIND_COUNT(K)
+                 S = S + NPAR
+              END DO
+              
+              IF(PRINT_BI) WRITE(121, *) ENER(:, 1), ENER(:, 2), ENER(:, 3)
 
-           if(fit_ener)then
+              DO K = 2, NPAR
+                 DO T = 1, SYS%DATA(I)%NATS
+                    
+                    S = K + (NINT(KIND_NAT(T)) - 1) * NPAR
+                    A(V, S) = A(V, S) + ENER(K-1, MAP(T)) * SYS%DATA(I)%WEIGHT
+                    IF (PCA) THEN
+                       IF (KIND_NAT(T) .EQ. 1) THEN
+                          SS = K - 1 + (NINT(KIND_NAT(T)) - 1) * (NPAR - 1)
+                          A2(VV, SS) = A(VV, SS) + ENER(K-1, MAP(T))
+                       END IF
+                    END IF
 
-              s=1
-              do k=1,nkinds
-                 A(v,s)=kind_count(k)
-                 s=s+npar
-              enddo
+                 END DO
+              END DO
+              
+              B(V) = (SYS%DATA(I)%ENER(L) - EREF) * SYS%DATA(I)%WEIGHT
+              V  = V  + 1
+              VV = VV + 1
 
-              if(print_bi) write(121,*) ener(:,1),ener(:,2),ener(:,3)
-              do k=2,npar
-                 do t=1,sys%data(i)%nats
+              ENER => NULL()
+              EREF => NULL()
 
+           END IF ! FITENER
 
-                    s=k+(nint(kind_nat(t))-1)*npar
-                    A(v,s)=A(v,s)+ener(k-1,map(t))*sys%data(i)%weight
-                    if(pca)then
-                       if(kind_nat(t).eq.1)then
-                          ss=k-1+(nint(kind_nat(t))-1)*(npar-1)
-                          A2(vv,ss)=A(vv,ss)+ener(k-1,map(t))
-                       endif
-                    endif
+           IF (FIT_FORCES) THEN
 
-                 enddo
-              enddo
+              CALL LAMMPS_EXTRACT_COMPUTE (F, LMP(I), 'sna_f', 1, 2)
+              CALL LAMMPS_EXTRACT_COMPUTE (FX_REF, LMP(I), 'f_x', 1, 1)
+              CALL LAMMPS_EXTRACT_COMPUTE (FY_REF, LMP(I), 'f_y', 1, 1)
+              CALL LAMMPS_EXTRACT_COMPUTE (FZ_REF, LMP(I), 'f_z', 1, 1)
 
-              B(v)=(sys%data(i)%ener(l)-Eref)*sys%data(i)%weight
-              v=v+1
-              vv=vv+1
+              DO T = 1, SYS%DATA(I)%NATS
 
-              ener=>null()
-              Eref=>null()
+                 S = 1
+                 DO K = 1, NKINDS
+                    A(V, S) = 0.0D0
+                    S = S + NPAR
+                 END DO
 
-           endif ! fitener
+                 DO N = 1, NKINDS
+                    S = (N-1) * (3 * (NPAR-1)) + 1  ! NPAR-1?
+                    DO K = 2, NPAR
+                       A(V, (N-1) * NPAR + K) = F(S, MAP(T)) * SYS%DATA(I)%WEIGHT
+                       S = S + 1
+                    END DO
+                 END DO
+                 B(V) = (SYS%DATA(I)%FX(L, T) - FX_REF(MAP(T))) * SYS%DATA(I)%WEIGHT
+                 V = V + 1
 
-           if(fit_forces )then
+                 S = 1
+                 DO K = 1, NKINDS
+                    A(V, S) = 0.0D0
+                    S = S + NPAR
+                 END DO
 
-              call lammps_extract_compute (f, lmp(i), 'sna_f', 1, 2)
-              call lammps_extract_compute (fx_ref, lmp(i), 'f_x', 1, 1)
-              call lammps_extract_compute (fy_ref, lmp(i), 'f_y', 1, 1)
-              call lammps_extract_compute (fz_ref, lmp(i), 'f_z', 1, 1)
+                 DO N = 1, NKINDS
+                    S = (N-1) * (3 * (NPAR-1)) + 1 + NPAR - 1
+                    DO K = 2, NPAR
+                       A(V, (N-1) * NPAR + K) = F(S, MAP(T)) * SYS%DATA(I)%WEIGHT
+                       S = S + 1
+                    END DO
+                 END DO
+                 B(V) = (SYS%DATA(I)%FY(L,T)-FY_REF(MAP(T))) * SYS%DATA(I)%WEIGHT
+                 V = V + 1
 
-              do t=1,sys%data(i)%nats
+                 S = 1
+                 DO K = 1, NKINDS
+                    A(V, S) = 0.0D0
+                    S = S + NPAR
+                 END DO
 
-                 s=1
-                 do k=1,nkinds
-                    A(v,s)=0.0
-                    s=s+npar
-                 enddo
+                 DO N = 1, NKINDS
+                    S = (N-1) * (3 * (NPAR-1)) + 1 + 2 * (NPAR-1)
+                    DO K = 2, NPAR
+                       A(V, (N-1) * NPAR + K) = F(S,MAP(T)) * SYS%DATA(I)%WEIGHT
+                       S = S + 1
+                    END DO
+                 END DO
+                 B(V) = (SYS%DATA(I)%FZ(L, T) - FZ_REF(MAP(T))) * SYS%DATA(I)%WEIGHT
+                 V = V + 1
 
-                 do n=1,nkinds
-                    s=(n-1)*(3*(npar-1))+1  ! npar-1?
-                    do k=2,npar
-                       A(v,((n-1)*npar+k))=f(s,map(t))*sys%data(i)%weight
-                       s=s+1
-                    enddo
-                 enddo
-                 B(v)=(sys%data(i)%fx(l,t)-fx_ref(map(t)))*sys%data(i)%weight
-                 v=v+1
+              END DO
 
-                 s=1
-                 do k=1,nkinds
-                    A(v,s)=0.0
-                    s=s+npar
-                 enddo
+              F      => NULL()
+              FX_REF => NULL()
+              FY_REF => NULL()
+              FZ_REF => NULL()
 
-                 do n=1,nkinds
-                    s=(n-1)*(3*(npar-1))+1+npar-1
-                    do k=2,npar
-                       A(v,((n-1)*npar+k))=f(s,map(t))*sys%data(i)%weight
-                       s=s+1
-                    enddo
-                 enddo
-                 B(v)=(sys%data(i)%fy(l,t)-fy_ref(map(t)))*sys%data(i)%weight
-                 v=v+1
+           END IF  ! END IF ON FORSE
+        END DO  ! CICLO ON FRAMES
 
-                 s=1
-                 do k=1,nkinds
-                    A(v,s)=0.0
-                    s=s+npar
-                 enddo
-
-                 do n=1,nkinds
-                    s=(n-1)*(3*(npar-1))+1+2*(npar-1)
-                    do k=2,npar
-                       A(v,((n-1)*npar+k))=f(s,map(t))*sys%data(i)%weight
-                       s=s+1
-                    enddo
-                 enddo
-                 B(v)=(sys%data(i)%fz(l,t)-fz_ref(map(t)))*sys%data(i)%weight
-                 v=v+1
-
-              enddo
-
-              f=>null()
-              fx_ref=>null()
-              fy_ref=>null()
-              fz_ref=>null()
-
-           endif  ! end if on forse
-        enddo  ! ciclo on frames
-
-        if(allocated(map)) deallocate(map)
-        if(allocated(id)) deallocate(id)
+        IF (ALLOCATED(MAP)) DEALLOCATE(MAP)
+        IF (ALLOCATED(ID) ) DEALLOCATE(ID)
         PRINT*,'COMPUTING BISPECTRUM: LINE => ', I, "FRAMES IN LINE: ", SYS%DATA(I)%FRAMES
-     enddo   ! ciclo su data
+     END DO   ! CICLO SU DATA
 
-     if(e0cs.eq.1)then
-        s=1
-        do k=1,nkinds-1
-           B(v)=0.0d0
-           A(v,s)=1.0d0
-           s=s+npar
-           v=v+1
-        enddo
-     endif
+     IF (E0CS .EQ. 1) THEN
+        S = 1
+        DO K = 1, NKINDS - 1
+           B(V)    = 0.0D0
+           A(V, S) = 1.0D0
+           S = S + NPAR
+           V = V + 1
+        END DO
+     END IF
 
-     if(e0cs.eq.2)then
-        s=1
-        do k=1,nkinds
-           B(v)=0.0d0
-           A(v,s)=1.0d2
-           s=s+npar
-           v=v+1
-        enddo
-     endif
+     IF (E0CS .EQ. 2) THEN
+        S = 1
+        DO K = 1, NKINDS
+           B(V)    = 0.0D0
+           A(V, S) = 1.0D2 !. WHY?
+           S = S + NPAR
+           V = V + 1
+        END DO
+     END IF
 
-     ! compressive sensing
+     ! COMPRESSIVE SENSING
 
-     if(cs)then
-        do k=1,nkinds
-           do l=2,npar
-              B(v)=0.0d0
-              s=(k-1)*npar+l
-              A(v,s)=cm_val
-              v=v+1
-           enddo
-        enddo
-     endif
+     IF (CS) THEN
+        DO K = 1, NKINDS
+           DO L = 2, NPAR
+              B(V) = 0.0D0
+              S = (K-1) * NPAR + L
+              A(V, S) = CM_VAL
+              V = V + 1
+           END DO
+        END DO
+     END IF
 
+     ! PRINCIPAL COMPONENT ANALYSIS
 
-     ! principal component analysis
+     IF (PCA) THEN
 
-     if(pca)then
+        Y = A2
+        DO L = 1, SIZE(Y, 2)
+           AVE = 0.0D0
+           DO S = 1, SIZE(Y, 1)
+              AVE = AVE + Y(S, L)
+           END DO
+           Y(1:SIZE(Y, 1), L) = Y(1:SIZE(Y, 1), L) - AVE / SIZE(Y, 1)
+        END DO
+        YY = MATMUL(TRANSPOSE(Y), Y)
+        CALL NEW_DIAG(SIZE(YY, 1), YY, W)
 
-        Y=A2
-        do l=1,size(Y,2)
-           ave=0.0d0
-           do s=1,size(Y,1)
-              ave=ave+Y(s,l)
-           enddo
-           Y(1:size(Y,1),l)=Y(1:size(Y,1),l)-ave/size(Y,1)
-        enddo
-        YY=matmul(transpose(Y),Y)
-        call new_diag(size(YY,1),YY,W)
+        IF (.NOT.ALLOCATED(AA)) ALLOCATE(AA(TOT_FRAMES,4))
 
-        if(.not.allocated(AA)) allocate(AA(tot_frames,4))
+        AA = MATMUL(A2, YY(:, (SIZE(W)-4):SIZE(W)))
 
-        AA=matmul(A2,YY(:,(size(W)-4):size(W)))
+        W = SQRT(ABS(W))
+        W = W / SUM(W)
+        WRITE(1313, *) 'Principal Components Values'
+        DO K = SIZE(W), 1, -1
+           WRITE(1313, *) W(K)
+        END DO
+        DO L = 1, SIZE(AA, 1)
+           WRITE(1313, *) (AA(L, K), K = 1, 4)
+        END DO
 
-        W=sqrt(abs(W))
-        W=W/sum(W)
-        write(1313,*) 'Principal Components Values'
-        do k=size(W),1,-1
-           write(1313,*) W(k)
-        enddo
-        do l=1,size(AA,1)
-           write(1313,*) (AA(l,k),k=1,4)
-        enddo
-
-!!!
+        !!
         !         aaa=70
         !         bbb=tot_frames
         !         lwork=bbb+64*bbb+1000
@@ -1187,11 +1186,11 @@ SUBROUTINE GET_LSMF_SNAP
         !          enddo
         !         enddo
         !         close(222)
-
+        
         !        endif
-!!!
+        !!
 
-     endif
+     END IF
 
      !        aaa=npar*nkinds
      !        if(cs)then
@@ -1201,27 +1200,25 @@ SUBROUTINE GET_LSMF_SNAP
      !         bbb=npar2fit!+nkinds!-1
      !         bbb=npar2fit
      !        endif
-     lwork=dimB+64*dimB+1000
-     allocate(work(lwork))
-     call dgels('N',dimB,dimA,1,A,dimB,B,dimB,WORK,LWORK,inf)
-     deallocate(work)
-     if(inf.ne.0)then
-        write(*,*) 'zgels failed',inf
-        stop
-     else
 
-
-        open(222,file='snapcoeff')
-
-        l=1
-        write(222,*) nkinds,npar
-        do i =1,nkinds
-           write(222,*) label(i),radii(i),cutoff(i)
-           do n=1,npar
-              write(222,*) B(l)
-              l=l+1
-           enddo
-        enddo
+     LWORK = DIMB + 64 * DIMB + 1000 ! VERY DISTURBING !
+     ALLOCATE(WORK(LWORK))
+     CALL DGELS('N', DIMB, DIMA, 1, A, DIMB, B, DIMB, WORK, LWORK, INF)
+     DEALLOCATE(WORK)
+     IF (INF .NE. 0) THEN
+        WRITE(*,*) 'zgels failed', INF
+        STOP
+     ELSE
+        OPEN(222, FILE = 'snapcoeff')
+        L = 1
+        WRITE(222, *) NKINDS, NPAR
+        DO I = 1, NKINDS
+           WRITE(222, *) LABEL(I), RADII(I), CUTOFF(I)
+           DO N = 1, NPAR
+              WRITE(222, *) B(L)
+              L = L + 1
+           END DO
+        END DO
 
         !        dump=0.0d0
         !        do i=npar*nkinds+1,size(B)
@@ -1229,579 +1226,498 @@ SUBROUTINE GET_LSMF_SNAP
         !        enddo
 
         !        write(222,*) 'dgels residulal: ',dump
-        close(222)
+        CLOSE(222)
 
-        open(333,file='snapparam')
-        write(333,*) 'rcutfac ',gen_cutoff
-        write(333,*) 'twojmax ',bi_order
-        write(333,*) 'quadraticflag ',quadflag
-        write(333,*) 'rfac0 1.00000'
-        write(333,*) 'rmin0 0'
-        write(333,*) 'diagonalstyle 3'
-        write(333,*) 'switchflag 1'
+        OPEN(333, FILE = 'snapparam')
+        WRITE(333, *) 'rcutfac ', GEN_CUTOFF
+        WRITE(333, *) 'twojmax ', BI_ORDER
+        WRITE(333, *) 'quadraticflag ', QUADFLAG
+        WRITE(333, *) 'rfac0 1.00000'
+        WRITE(333, *) 'rmin0 0'
+        WRITE(333, *) 'diagonalstyle 3'
+        WRITE(333, *) 'switchflag 1'
+        CLOSE(333)
 
-        close(333)
+        DO I=1,SYS%NDATA
+           CALL LAMMPS_FILE (LMP(I),SYS%INP_FIX)
+        END DO
 
-        do i=1,sys%ndata
-           call lammps_file (lmp(i),sys%inp_fix)
-        enddo
+     END IF
 
-     endif
+  END IF ! SKIP_FIT
 
-  endif ! skip_fit
+  RETURN
+END SUBROUTINE GET_LSMF_SNAP
 
-  return
-end subroutine get_lsmf_snap
+SUBROUTINE REFINE_SNAP
+  USE FIT_LAMMPS_CLASS
+  USE LAPACK_DIAG_SIMM
+  USE LAPACK_INVERSE
+  USE RANDOM_NUMBERS_CLASS
+  USE COMMON_VAR
+  USE LAMMPS
+  USE LISTS_CLASS
+  USE META_CLASS
+  USE, INTRINSIC :: ISO_C_BINDING, ONLY : C_DOUBLE, C_PTR, C_INT
+  IMPLICIT NONE
 
-subroutine refine_snap
-  use fit_lammps_class
-  use lapack_diag_simm
-  use lapack_inverse
-  use random_numbers_class
-  use common_var
-  use LAMMPS
-  use lists_class
-  use meta_class
-  use, intrinsic :: ISO_C_binding, only : C_double, C_ptr, C_int
-  implicit none
+  INTEGER                         :: L, I, J, V, K
+  REAL(8), ALLOCATABLE            :: R(:)
+  !
+  CHARACTER(LEN=10000)            :: SNAP_STRING
+  REAL(8), ALLOCATABLE            :: CUTOFF(:), RADII(:)
+  INTEGER, ALLOCATABLE            :: KIND_COUNT(:), TYPE2FIT(:)
+  CHARACTER (LEN=2),ALLOCATABLE   :: LABEL(:)
+  INTEGER                         :: NKINDS,BI_ORDER, NPAR, NPAR2FIT, TOT_FRAMES
+  INTEGER                         :: NATS2FIT, QUADFLAG
+  REAL(8)                         :: GEN_CUTOFF, PI
 
-  integer                         :: l,i,j,v,k
-  real(8), allocatable   :: r(:)
+  REAL (C_DOUBLE), POINTER        :: ID_DBL(:)=> NULL()
+  REAL (C_DOUBLE), POINTER        :: KIND_NAT(:) => NULL()
+  INTEGER, ALLOCATABLE            :: MAP(:), ID(:)
 
-  character (len=10000)           :: snap_string
-  real(8), allocatable   :: cutoff(:),radii(:)
-  integer, allocatable            :: kind_count(:),type2fit(:)
-  character (len=2),allocatable   :: label(:)
-  integer                         :: nkinds,bi_order,npar,npar2fit,tot_frames
-  integer                         :: nats2fit,quadflag
-  real(8)                :: gen_cutoff,pi
+  REAL(8), ALLOCATABLE   :: MAX_KERNEL(:)
+  REAL(8)                :: DFT_ENER,VAL,RAND_SEED
 
-  real (C_double), pointer        :: id_dbl(:)=> null()
-  real (c_double), pointer        :: kind_nat(:) => null()
-  integer, allocatable            :: map(:),id(:)
+  REAL (C_DOUBLE), POINTER   :: B(:,:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: FF_ENER => NULL()
 
-  real(8), allocatable   :: max_kernel(:)
-  real(8)                :: dft_ener,val,rand_seed
+  ALLOCATE(LMP(1))
 
-  real (C_double), pointer   :: B(:,:) => null()
-  real (c_double), pointer   :: ff_ener => null()
+  PI=ACOS(-1.0D0)
 
-  allocate(lmp(1))
+  CALL LAMMPS_OPEN_NO_MPI ('lmp -log none', LMP(1))
+  CALL LAMMPS_FILE (LMP(1), SYS%INP)
+  CALL LAMMPS_COMMAND (LMP(1), 'read_data ' // TRIM(SYS%DATA(1)%INP_DATA))
+  CALL LAMMPS_FILE (LMP(1), SYS%INP_FIX)
+  CALL LAMMPS_COMMAND (LMP(1), 'compute pe_ener all pe')
 
-  pi=acos(-1.0d0)
+  OPEN(16, FILE = SYS%INP_FIT)
+  READ(16, *) GEN_CUTOFF, BI_ORDER, NPAR, QUADFLAG
+  READ(16, *) NKINDS
+  ALLOCATE(LABEL(NKINDS))
+  ALLOCATE(TYPE2FIT(NKINDS))
+  ALLOCATE(CUTOFF(NKINDS))
+  ALLOCATE(RADII(NKINDS))
+  ALLOCATE(KIND_COUNT(NKINDS))
+  KIND_COUNT = 0
+  DO I = 1, NKINDS
+     READ(16, *) LABEL(I), TYPE2FIT(I), RADII(I), CUTOFF(I)
+     WRITE(*, *) LABEL(I), TYPE2FIT(I), RADII(I), CUTOFF(I)
+  END DO
+  CLOSE(16)
+  WRITE(SNAP_STRING, *) GEN_CUTOFF, '1.0000', BI_ORDER, (RADII(I), I = 1, NKINDS),&
+       & (CUTOFF(I), I = 1, NKINDS), 'quadraticflag ',QUADFLAG
 
-  call lammps_open_no_mpi ('lmp -log none', lmp(1))
-  call lammps_file (lmp(1),sys%inp)
-  call lammps_command (lmp(1),'read_data '//trim(sys%data(1)%inp_data))
-  call lammps_file (lmp(1),sys%inp_fix)
-  call lammps_command (lmp(1), 'compute pe_ener all pe')
-
-  open(16,file=sys%inp_fit)
-  read(16,*) gen_cutoff,bi_order,npar,quadflag
-  read(16,*) nkinds
-  allocate(label(nkinds))
-  allocate(type2fit(nkinds))
-  allocate(cutoff(nkinds))
-  allocate(radii(nkinds))
-  allocate(kind_count(nkinds))
-  kind_count=0
-  do i=1,nkinds
-     read(16,*) label(i),type2fit(i),radii(i),cutoff(i)
-     write(*,*) label(i),type2fit(i),radii(i),cutoff(i)
-  enddo
-  close(16)
-  write(snap_string,*) gen_cutoff,'1.0000',bi_order,(radii(i),i=1,nkinds),(cutoff(i),i=1,nkinds),&
-       'quadraticflag ',quadflag
-
-  call lammps_command (lmp(1), &
-       'compute sna_e all sna/atom '//trim(snap_string)//&
+  CALL LAMMPS_COMMAND (LMP(1), &
+       'compute sna_e all sna/atom ' // TRIM(SNAP_STRING)//&
        ' diagonal 3 rmin0 0 switchflag 1')
-  call lammps_command (lmp(1),&
-       'compute type all property/atom type')
-  call lammps_command (lmp(1),&
-       'compute id all property/atom id')
+  CALL LAMMPS_COMMAND (LMP(1), 'compute type all property/atom type')
+  CALL LAMMPS_COMMAND (LMP(1), 'compute id all property/atom id')
 
-  ! minimize energy
+  ! MINIMIZE ENERGY
 
-  call lammps_command (lmp(1),'thermo 1')
-  call lammps_command (lmp(1),&
-       'thermo_style custom step time temp pe etotal ')
-  !         call lammps_command (lmp(1), &
-  !                'minimize 1.0e-8 1.0e-8 1000 100000')
-
-  write(snap_string,*) (label(i)//' ',i=1,size(label))
-
-  call lammps_command (lmp(1),&
-       'dump xyz_dump all xyz 5 geo_opt.xyz')
-
-  call lammps_command (lmp(1),&
-       'dump_modify            xyz_dump element '//trim(snap_string))
-
-  ! set velocities
-
-  write(snap_string,*) refine_temp
-
-  call lammps_command (lmp(1),'timestep 0.25')
-  call lammps_command (lmp(1),'variable t equal'//trim(snap_string))
-
-  call random_number(rand_seed)
-  write(snap_string,*) nint(rand_seed*10000.0d0)
-
-  call lammps_command (lmp(1), &
-       'velocity all create $t '//trim(snap_string)//&
-       ' dist gaussian')
-  call lammps_command (lmp(1),'velocity all zero linear')
-  call lammps_command (lmp(1),'velocity all zero angular')
-
-
-  call lammps_command (lmp(1),'group atom1 id 1')
-  call lammps_command (lmp(1),'group atom2 id 4')
-  !         call lammps_command (lmp(1),'group atom3 id 7')
-  call meta1%gauss%init()
-  !         call meta2%gauss%init()
-
-  call lammps_command (lmp(1), &
-       'fix 1 all nvt temp $t $t 100.0 tchain 3')
-
-  open(13,file='new_geo.xyz',access='append')
-  open(14,file='kernel_max.dat',access='append')
-  open(15,file='new_geo.ener',access='append')
-  open(16,file='meta.dat',access='append')
-
-  if(.not.allocated(max_kernel)) &
-       allocate(max_kernel(sys%data(1)%nats))
-  !         if(.not.allocated(max_kernel)) &
-  !                allocate(max_kernel(kernel%nkinds))
-
-  write(14,*) '## nkinds: ',kernel%nkinds,'nenvs: ',(kernel%K(i)%nenvs,i=1,kernel%nkinds)
-  flush(14)
-
-  do i=1,400000
-
-     call lammps_command (lmp(1), 'run 4')
-     call lammps_extract_compute (B, lmp(1), 'sna_e', 1, 2)
-     call lammps_extract_compute (ff_ener, lmp(1), 'pe_ener', 0, 0)
-     call lammps_extract_compute (kind_nat, lmp(1), 'type', 1, 1)
-     if(.not. allocated(id)) allocate(id(sys%data(1)%nats))
-     if(.not. allocated(map)) allocate(map(sys%data(1)%nats))
-     call lammps_extract_compute (id_dbl, lmp(1), 'id', 1, 1)
-
-     if(do_meta)then
-
-        if(allocated(r)) deallocate(r)
-        call lammps_gather_atoms (lmp(1),'x', 3, r)
-
-        dist1=(r(1)-r(10))**2
-        dist1=dist1+(r(2)-r(11))**2
-        dist1=dist1+(r(3)-r(12))**2
-        dist1=sqrt(dist1)
-
-        !           dist2=(r(4)-r(7))**2
-        !           dist2=dist2+(r(5)-r(8))**2
-        !           dist2=dist2+(r(6)-r(9))**2
-        !           dist2=sqrt(dist2)
-
-        f1=0.0d0
-        f2=0.0d0
-        !           f3=0.0d0
-
-        if(meta1%gauss%nelem.ge.1)then
-
-           call meta1%gauss%reboot()
-           !            call meta2%gauss%reboot()
-
-           do j=1,meta1%gauss%nelem
-
-              call meta1%gauss%rd_val(height1)
-              !             call meta2%gauss%rd_val(height2)
-
-              !             f1(1)=f1(1)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
-              !             f1(2)=f1(2)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
-              !             f1(3)=f1(3)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
-
-              !             f2(1)=f2(1)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
-              !             f2(2)=f2(2)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
-              !             f2(3)=f2(3)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2)*&
-              !                 (dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
-
-              !             f1(1)=f1(1)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
-              !             f1(2)=f1(2)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
-              !             f1(3)=f1(3)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
-
-              !             f2(1)=f2(1)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
-              !             f2(2)=f2(2)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
-              !             f2(3)=f2(3)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
-
-              !             f1(1)=f1(1)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(4)-r(19))/meta1%sigma**2/dist2
-              !             f1(2)=f1(2)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(5)-r(20))/meta1%sigma**2/dist2
-              !             f1(3)=f1(3)+2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(6)-r(21))/meta1%sigma**2/dist2
-
-              !             f3(1)=f3(1)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(4)-r(19))/meta1%sigma**2/dist2
-              !             f3(2)=f3(2)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(5)-r(20))/meta1%sigma**2/dist2
-              !             f3(3)=f3(3)-2*meta1%weight*&
-              !                 exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*&
-              !                 (dist2-height2)*(r(6)-r(21))/meta1%sigma**2/dist2
-
-              call meta1%gauss%skip()
-              !             call meta2%gauss%skip()
-
-           enddo
-
-        endif
-
-        !! contraint distances
-        if(dist1.gt.8.0d0 .and. dist1.lt.16.0d0)then
-           f1(1)=f1(1)+2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(1)-r(10))/dist1
-           f1(2)=f1(2)+2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(2)-r(11))/dist1
-           f1(3)=f1(3)+2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(3)-r(12))/dist1
-           f2(1)=f2(1)-2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(1)-r(10))/dist1
-           f2(2)=f2(2)-2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(2)-r(11))/dist1
-           f2(3)=f2(3)-2000.d0*sin(pi*dist1/8.0d0)*pi/8.0d0*(r(3)-r(12))/dist1
-        endif
-
-        if(i.ge.2)then
-           call lammps_command (lmp(1), 'unfix add1')
-           call lammps_command (lmp(1), 'unfix add2')
-           !             call lammps_command (lmp(1), 'unfix add3')
-        endif
-
-        write(snap_string,"(3F12.6)") f1(1),f1(2),f1(3)
-        call lammps_command (lmp(1), 'fix add1 atom1 addforce '&
-             //trim(snap_string))
-        write(snap_string,"(3F12.6)") f2(1),f2(2),f2(3)
-        call lammps_command (lmp(1), 'fix add2 atom2 addforce '&
-             //trim(snap_string))
-        !            write(snap_string,"(3F12.6)") f3(1),f3(2),f3(3)
-        !            call lammps_command (lmp(1), 'fix add3 atom3 addforce '&
-        !                                 //trim(snap_string))
-
-        if(mod(dble(i),10.0d0).lt.1.0e-6)then
-           call meta1%gauss%add_node(dist1)
-           !            call meta2%gauss%add_node(dist2)
-           write(16,*) i,dist1!,dist2
-        endif
-
-     endif
-
-     id=INT(id_dbl)
-     id_dbl=>null()
-
-     do k=1,sys%data(1)%nats
-        map(id(k))=k
-     enddo
-
-     max_kernel=0.0d0
-
-     do k=1,size(B,2)
-        l=nint(kind_nat(map(k)))
-        do v=1,kernel%K(l)%nenvs
-           val=0.0d0
-           do j=1,size(B,1)
-              val=val-(B(j,map(k))-kernel%K(l)%B(v,j))**2
-           enddo
-           val=exp(val/2*kernel%K(l)%sigma**2)
-           if(val.gt.max_kernel(map(k))) max_kernel(map(k))=val
-        enddo
-     enddo
-
-     write(14,*) i,max_kernel
-     flush(14)
-
-     if(any(max_kernel.lt.thr_kernel))then
-        if(allocated(r)) deallocate(r)
-        call lammps_gather_atoms (lmp(1),'x', 3, r)
-        write(13,*) sys%data(1)%nats
-        write(13,*)
-        l=1
-        do j=1,sys%data(1)%nats
-           write(13,*) sys%data(1)%label(j),r(l),r(l+1),r(l+2)
-           l=l+3
-        enddo
-        flush(13)
-        call execute_command_line('./run_DFT_scf.x')
-        open(16,file='last_dft_ener.dat')
-        read(16,*) dft_ener
-        close(16)
-        write(15,*) dft_ener,ff_ener
-        flush(15)
-        close(13)
-        close(14)
-        close(15)
-        call lammps_close (lmp(1))
-        deallocate(lmp)
-        return
-        write(*,*) 'PUPPA'
-        flush(6)
-     endif
-
-  enddo
-
-  call lammps_close (lmp(1))
-  deallocate(lmp)
-  refine=.false.
-  close(13)
-  close(14)
-  close(15)
-
-  return
-end subroutine refine_snap
-
-program fitsnap
-  use fit_lammps_class
-  use common_var
-  implicit none
-  integer                        :: l
-  character (len=100)            :: command,input,datas,output,new_datas
-
-  if(iargc().eq.0)then
-     write(*,*) 'FitSnap Usage:'
-     write(*,*) '-datas : list of files to be fitted'
-     write(*,*) '-inp : Lammps like input to set put calculation'
-     write(*,*) '-pot_fit : Lammps like input for the potentials to be &
-          fitted '
-     write(*,*) '-pot_fix : Lammps like input to be appended, not &
-          touched by the optimization'
-     write(*,*) '-ener   : switch on the fitting of energies'
-     write(*,*) '-forces : switch on the fitting of forces'
-     write(*,*) '-tensor : switch on the fitting of a tensor'
-     write(*,*) '-compress <val> : activates ridge-regression'
-     write(*,*) '-pca            : activate principal components &
-          analysys.'
-     write(*,*) '-print_bi       : print bispectrum components'
-     write(*,*) '-out'
-     write(*,*) '-refine <iter> <temp> <thr>'
-     stop
-  endif
-
-  do l=1,iargc()
-
-     call getarg(l,command)
-
-     if(trim(command).eq.'-datas')then
-        call getarg(l+1,command)
-        read(command,*) datas
-     endif
-     if(trim(command).eq.'-inp')then
-        call getarg(l+1,command)
-        read(command,*) sys%inp
-     endif
-     if(trim(command).eq.'-pot_fit')then
-        call getarg(l+1,command)
-        read(command,*) sys%inp_fit
-     endif
-     if(trim(command).eq.'-pot_fix')then
-        call getarg(l+1,command)
-        read(command,*) sys%inp_fix
-     endif
-     if(trim(command).eq.'-forces')then
-        fit_forces=.true.
-     endif
-     if(trim(command).eq.'-ener')then
-        fit_ener=.true.
-     endif
-     if(trim(command).eq.'-skip_fit')then
-        skip_fit=.true.
-     endif
-     if(trim(command).eq.'-print_bi')then
-        print_bi=.true.
-     endif
-     if(trim(command).eq.'-pca')then
-        pca=.true.
-     endif
-     if(trim(command).eq.'-refine')then
-        refine=.true.
-        call getarg(l+1,command)
-        read(command,*) refine_maxiter
-        call getarg(l+2,command)
-        read(command,*) refine_temp
-        call getarg(l+3,command)
-        read(command,*) thr_kernel
-     endif
-     if(trim(command).eq.'-compress')then
-        cs=.true.
-        call getarg(l+1,command)
-        read(command,*) cm_val
-     endif
-     if(trim(command).eq.'-E0')then
-!!!! -E0 0 -E0 1:
-        call getarg(l+1,command)
-        read(command,*) e0cs
-     endif
-
-  enddo
-
-  iter=0
-  new_datas=datas
-
-  do while ( (iter.le.refine_maxiter .and. refine) .or. iter.eq.0 )
-
-     if(iter.gt.0)then
-
-        call execute_command_line('tail -n $( head -n 1 '&
-             //trim(datas)//' ) '//trim(datas)//' > new_datas')
-        call execute_command_line('sed -i "1i $(( 1+$( head -n 1 '&
-             //trim(datas)//') ))" new_datas'  )
-
-        new_datas='new_datas'
-        open(9,file=new_datas,access='append')
-
-        if(fit_ener .and. (.not. fit_forces))then
-           write(9,*) trim(sys%data(1)%inp_data)//' ',&
-                iter,'new_geo.xyz',' new_geo.ener 1.0'
-           close(9)
-        endif
-        if(fit_ener .and. fit_forces)then
-           write(9,*) trim(sys%data(1)%inp_data)//' ',&
-                iter,'new_geo.xyz',&
-                ' new_geo.ener new_geo.force 1.0'
-           close(9)
-        endif
-        if((.not. fit_ener) .and. fit_forces)then
-           write(9,*) trim(sys%data(1)%inp_data)//' ',&
-                iter,'new_geo.xyz',&
-                ' new_geo.force 1.0'
-           close(9)
-        endif
-
-     endif
-
-     call sys%read_sys(new_datas,fit_ener,fit_forces)
-     call get_lsmf_snap
+  CALL LAMMPS_COMMAND (LMP(1), 'thermo 1')
+  CALL LAMMPS_COMMAND (LMP(1), 'thermo_style custom step time temp pe etotal ')
+  !         CALL LAMMPS_COMMAND (LMP(1), 'minimize 1.0e-8 1.0e-8 1000 100000')
+
+  WRITE(SNAP_STRING, *) (LABEL(I) // ' ', I = 1, SIZE(LABEL))
+
+  CALL LAMMPS_COMMAND (LMP(1), 'dump xyz_dump all xyz 5 geo_opt.xyz')
+
+  CALL LAMMPS_COMMAND (LMP(1), 'dump_modify            xyz_dump element '//trim(snap_string))
+
+  ! SET VELOCITIES
+
+  WRITE(SNAP_STRING, *) REFINE_TEMP
+
+  CALL LAMMPS_COMMAND (LMP(1), 'timestep 0.25')
+  CALL LAMMPS_COMMAND (LMP(1), 'variable t equal' // TRIM(SNAP_STRING))
+
+  CALL RANDOM_NUMBER(RAND_SEED)
+  WRITE(SNAP_STRING, *) NINT(RAND_SEED * 10000.0D0)
+
+  CALL LAMMPS_COMMAND (LMP(1), 'velocity all create $t ' // TRIM(SNAP_STRING) // ' dist gaussian')
+  CALL LAMMPS_COMMAND (LMP(1), 'velocity all zero linear')
+  CALL LAMMPS_COMMAND (LMP(1), 'velocity all zero angular')
+
+  CALL LAMMPS_COMMAND (LMP(1), 'group atom1 id 1')
+  CALL LAMMPS_COMMAND (LMP(1), 'group atom2 id 4')
+  !         CALL LAMMPS_COMMAND (LMP(1), 'group atom3 id 7')
+  CALL META1%GAUSS%INIT()
+  !         CALL META2%GAUSS%INIT()
+
+  CALL LAMMPS_COMMAND (LMP(1), 'fix 1 all nvt temp $t $t 100.0 tchain 3')
+
+  OPEN(13, FILE='new_geo.xyz',    ACCESS='APPEND')
+  OPEN(14, FILE='kernel_max.dat', ACCESS='APPEND')
+  OPEN(15, FILE='new_geo.ener',   ACCESS='APPEND')
+  OPEN(16, FILE='meta.dat',       ACCESS='APPEND')
+
+  IF (.NOT. ALLOCATED(MAX_KERNEL)) ALLOCATE(MAX_KERNEL(SYS%DATA(1)%NATS))
+  ! IF (.NOT. ALLOCATED(MAX_KERNEL)) ALLOCATE(MAX_KERNEL(KERNEL%NKINDS))
+
+  WRITE(14, *) '## nkinds: ', KERNEL%NKINDS, 'nenvs: ', (KERNEL%K(I)%NENVS, I = 1, KERNEL%NKINDS)
+  FLUSH(14)
+
+  DO I = 1, 400000              ! RAJARSHI: WHY THIS PARTICULAR NUMBER?
+
+     CALL LAMMPS_COMMAND (LMP(1), 'run 4')
+     CALL LAMMPS_EXTRACT_COMPUTE (B, LMP(1), 'sna_e', 1, 2)
+     CALL LAMMPS_EXTRACT_COMPUTE (FF_ENER, LMP(1), 'pe_ener', 0, 0)
+     CALL LAMMPS_EXTRACT_COMPUTE (KIND_NAT, LMP(1), 'type', 1, 1)
+     IF (.NOT. ALLOCATED(ID)) ALLOCATE(ID(SYS%DATA(1)%NATS))
+     IF (.NOT. ALLOCATED(MAP)) ALLOCATE(MAP(SYS%DATA(1)%NATS))
+     CALL LAMMPS_EXTRACT_COMPUTE (ID_DBL, LMP(1), 'id', 1, 1)
+
+     IF (DO_META) THEN
+
+        IF (ALLOCATED(R)) DEALLOCATE(R)
+        CALL LAMMPS_GATHER_ATOMS (LMP(1), 'x', 3, R)
+
+        DIST1 = (R(1) - R(10))**2
+        DIST1 = DIST1 + (R(2) - R(11))**2
+        DIST1 = DIST1 + (R(3) - R(12))**2
+        DIST1 = SQRT(DIST1)
+
+        !           DIST2=(R(4)-R(7))**2
+        !           DIST2=DIST2+(R(5)-R(8))**2
+        !           DIST2=DIST2+(R(6)-R(9))**2
+        !           DIST2=SQRT(DIST2)
+
+        F1 = 0.0D0
+        F2 = 0.0D0
+        !           F3=0.0D0
+
+        IF (META1%GAUSS%NELEM .GE. 1) THEN
+
+           CALL META1%GAUSS%REBOOT()
+           !            CALL META2%GAUSS%REBOOT()
+
+           DO J = 1, META1%GAUSS%NELEM
+
+              CALL META1%GAUSS%RD_VAL(HEIGHT1)
+              !   call meta2%gauss%rd_val(height2)
+              !
+              !f1(1)=f1(1)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
+              !f1(2)=f1(2)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
+              !f1(3)=f1(3)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
+              !
+              !f2(1)=f2(1)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
+              !f2(2)=f2(2)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
+              !f2(3)=f2(3)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2)*(dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
+              !
+              !f1(1)=f1(1)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
+              !f1(2)=f1(2)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
+              !f1(3)=f1(3)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
+              !
+              !f2(1)=f2(1)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(4)-r(7))/meta1%sigma**2/dist1
+              !f2(2)=f2(2)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(5)-r(8))/meta1%sigma**2/dist1
+              !f2(3)=f2(3)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist1-height1)*(r(6)-r(9))/meta1%sigma**2/dist1
+              !
+              !f1(1)=f1(1)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(4)-r(19))/meta1%sigma**2/dist2
+              !f1(2)=f1(2)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(5)-r(20))/meta1%sigma**2/dist2
+              !f1(3)=f1(3)+2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(6)-r(21))/meta1%sigma**2/dist2
+              !
+              !f3(1)=f3(1)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(4)-r(19))/meta1%sigma**2/dist2
+              !f3(2)=f3(2)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(5)-r(20))/meta1%sigma**2/dist2
+              !f3(3)=f3(3)-2*meta1%weight*exp(-(height1-dist1)**2/meta1%sigma**2-(height2-dist2)**2/meta2%sigma**2)*(dist2-height2)*(r(6)-r(21))/meta1%sigma**2/dist2
+              !
+              CALL META1%GAUSS%SKIP()
+              !   CALL META2%GAUSS%SKIP()
+
+           END DO
+
+        END IF
+
+        !! CONTRAINT DISTANCES
+        IF (DIST1 .GT. 8.0D0 .AND. DIST1 .LT. 16.0D0) THEN
+           ! WHY MULTIPLY BY 2000 ? !
+           F1(1) = F1(1) + 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(1) - R(10)) / DIST1
+           F1(2) = F1(2) + 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(2) - R(11)) / DIST1
+           F1(3) = F1(3) + 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(3) - R(12)) / DIST1
+           F2(1) = F2(1) - 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(1) - R(10)) / DIST1
+           F2(2) = F2(2) - 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(2) - R(11)) / DIST1
+           F2(3) = F2(3) - 2000.D0 * SIN(PI * DIST1 / 8.0D0) * PI/8.0D0 * (R(3) - R(12)) / DIST1
+        END IF
+
+        IF (I .GE. 2) THEN
+           CALL LAMMPS_COMMAND (LMP(1), 'unfix add1')
+           CALL LAMMPS_COMMAND (LMP(1), 'unfix add2')
+           !   CALL LAMMPS_COMMAND (LMP(1), 'unfix add3')
+        END IF
+
+        WRITE(SNAP_STRING, "(3F12.6)") F1(1), F1(2), F1(3)
+        CALL LAMMPS_COMMAND (LMP(1), 'fix add1 atom1 addforce ' // TRIM(SNAP_STRING))
+        WRITE(SNAP_STRING, "(3F12.6)") F2(1), F2(2), F2(3)
+        CALL LAMMPS_COMMAND (LMP(1), 'fix add2 atom2 addforce ' // TRIM(SNAP_STRING))
+        !   WRITE(SNAP_STRING,"(3F12.6)") F3(1), F3(2), F3(3)
+        !   CALL LAMMPS_COMMAND (LMP(1), 'fix add3 atom3 addforce ' // TRIM(SNAP_STRING))
+
+        IF (MOD(DBLE(I), 10.0D0) .LT. 1.0E-6) THEN
+           CALL META1%GAUSS%ADD_NODE(DIST1)
+           !            CALL META2%GAUSS%ADD_NODE(DIST2)
+           WRITE(16, *) I, DIST1!, DIST2
+        END IF
+
+     END IF
+
+     ID = INT(ID_DBL)
+     ID_DBL => NULL()
+
+     DO K = 1, SYS%DATA(1)%NATS
+        MAP(ID(K)) = K
+     END DO
+
+     MAX_KERNEL = 0.0D0
+
+     DO K = 1, SIZE(B, 2)
+        L = NINT(KIND_NAT(MAP(K)))
+        DO V = 1, KERNEL%K(L)%NENVS
+           VAL = 0.0D0
+           DO J = 1, SIZE(B, 1)
+              VAL = VAL - (B(J, MAP(K)) - KERNEL%K(L)%B(V, J))**2
+           END DO
+           VAL = EXP(VAL / 2 * KERNEL%K(L)%SIGMA**2)
+           IF (VAL .GT. MAX_KERNEL(MAP(K))) MAX_KERNEL(MAP(K)) = VAL
+        END DO
+     END DO
+
+     WRITE(14, *) I, MAX_KERNEL
+     FLUSH(14)
+
+     IF (ANY(MAX_KERNEL .LT. THR_KERNEL)) THEN
+        IF (ALLOCATED(R)) DEALLOCATE(R)
+        CALL LAMMPS_GATHER_ATOMS (LMP(1),'x', 3, R)
+        WRITE(13, *) SYS%DATA(1)%NATS
+        WRITE(13, *)
+        L = 1
+        DO J = 1, SYS%DATA(1)%NATS
+           WRITE(13, *) SYS%DATA(1)%LABEL(J), R(L), R(L+1), R(L+2)
+           L = L + 3
+        END DO
+        FLUSH(13)
+        CALL EXECUTE_COMMAND_LINE('./run_DFT_scf.x')
+        OPEN(16, FILE = 'last_dft_ener.dat'); READ(16, *) DFT_ENER; CLOSE(16)
+        WRITE(15, *) DFT_ENER, FF_ENER
+        FLUSH(15)
+        CLOSE(13); CLOSE(14); CLOSE(15)
+        CALL LAMMPS_CLOSE (LMP(1))
+        DEALLOCATE(LMP)
+        RETURN                  ! RAJARSHI: NEXT TWO STATEMENTS WON'T RUN!
+        WRITE(*, *) 'PUPPA'
+        FLUSH(6)
+     END IF
+
+  END DO
+
+  CALL LAMMPS_CLOSE (LMP(1))
+  DEALLOCATE(LMP)
+  REFINE = .FALSE.
+  CLOSE(13)
+  CLOSE(14)
+  CLOSE(15)
+
+  RETURN
+END SUBROUTINE REFINE_SNAP
+
+PROGRAM FITSNAP
+  USE FIT_LAMMPS_CLASS
+  USE COMMON_VAR
+  IMPLICIT NONE
+  INTEGER              :: L
+  CHARACTER(LEN=100)   :: COMMAND, INPUT, DATAS, OUTPUT, NEW_DATAS
+
+  IF (IARGC() .EQ. 0) THEN
+     WRITE(*, *) 'FitSnap Usage:'
+     WRITE(*, *) '-datas   : list of files to be fitted'
+     WRITE(*, *) '-inp     : Lammps like input to set put calculation'
+     WRITE(*, *) '-pot_fit : Lammps like input for the potentials to be fitted '
+     WRITE(*, *) '-pot_fix : Lammps like input to be appended, not touched by the optimization'
+     WRITE(*, *) '-ener    : switch on the fitting of energies'
+     WRITE(*, *) '-forces  : switch on the fitting of forces'
+     WRITE(*, *) '-tensor  : switch on the fitting of a tensor'
+     WRITE(*, *) '-compress <val> : activates ridge-regression'
+     WRITE(*, *) '-pca            : activate principal components analysys.'
+     WRITE(*, *) '-print_bi       : print bispectrum components'
+     WRITE(*, *) '-out'
+     WRITE(*, *) '-refine <iter> <temp> <thr>'
+     STOP
+  END IF
+
+  DO L = 1, IARGC()
+
+     CALL GETARG(L, COMMAND)
+
+     IF (TRIM(COMMAND) .EQ. '-datas') THEN
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) DATAS
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-inp') THEN
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) SYS%INP
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-pot_fit') THEN
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) SYS%INP_FIT
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-pot_fix') THEN
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) SYS%INP_FIX
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-forces')   FIT_FORCES = .TRUE.
+     IF (TRIM(COMMAND) .EQ. '-ener')     FIT_ENER   = .TRUE.
+     IF (TRIM(COMMAND) .EQ. '-skip_fit') SKIP_FIT   = .TRUE.
+     IF (TRIM(COMMAND) .EQ. '-print_bi') PRINT_BI   = .TRUE.
+     IF (TRIM(COMMAND) .EQ. '-pca')      PCA        = .TRUE.
+     IF (TRIM(COMMAND) .EQ. '-refine') THEN
+        REFINE = .TRUE.
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) REFINE_MAXITER
+        CALL GETARG(L + 2, COMMAND);   READ(COMMAND, *) REFINE_TEMP
+        CALL GETARG(L + 3, COMMAND);   READ(COMMAND, *) THR_KERNEL
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-compress') THEN
+        CS = .TRUE.
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) CM_VAL
+     END IF
+     IF (TRIM(COMMAND) .EQ. '-E0') THEN
+        !! -E0 0 -E0 1:
+        CALL GETARG(L + 1, COMMAND);   READ(COMMAND, *) E0CS
+     END IF
+
+  END DO
+
+  ITER = 0
+  NEW_DATAS = DATAS
+
+  DO WHILE ( (ITER .LE. REFINE_MAXITER .AND. REFINE) .OR. ITER .EQ. 0 )
+
+     IF (ITER .GT. 0) THEN
+
+        CALL EXECUTE_COMMAND_LINE('tail -n $( head -n 1 ' // TRIM(DATAS) // ' ) ' // TRIM(DATAS) // ' > new_datas')
+        CALL EXECUTE_COMMAND_LINE('sed -i "1i $(( 1+$( head -n 1 ' // TRIM(DATAS) // ') ))" new_datas')
+
+        NEW_DATAS = 'new_datas'
+        OPEN(9, FILE = NEW_DATAS, ACCESS = 'APPEND')
+
+        IF (FIT_ENER .AND. (.NOT. FIT_FORCES)) THEN
+           WRITE(9, *) TRIM(SYS%DATA(1)%INP_DATA) // ' ', ITER, 'new_geo.xyz', ' new_geo.ener 1.0'
+           CLOSE(9)
+        END IF
+        IF (FIT_ENER .AND. FIT_FORCES) THEN
+           WRITE(9, *) TRIM(SYS%DATA(1)%INP_DATA) // ' ', ITER, 'new_geo.xyz', ' new_geo.ener new_geo.force 1.0'
+           CLOSE(9)
+        END IF
+        IF ((.NOT. FIT_ENER) .AND. FIT_FORCES) THEN
+           WRITE(9, *) TRIM(SYS%DATA(1)%INP_DATA) // ' ', ITER, 'new_geo.xyz', ' new_geo.force 1.0'
+           CLOSE(9)
+        END IF
+
+     END IF
+
+     CALL SYS%READ_SYS(NEW_DATAS, FIT_ENER, FIT_FORCES)
+     CALL GET_LSMF_SNAP
      PRINT*,'BEFORE GET_CHI2'
-     call get_chi2
-     if(refine) call refine_snap
-     iter=iter+1
+     CALL GET_CHI2
+     IF (REFINE) CALL REFINE_SNAP
+     ITER = ITER + 1
 
-  enddo
+  END DO
 
-  return
-end program fitsnap
+  RETURN
+END PROGRAM FITSNAP
 
-subroutine get_chi2
-  use fit_lammps_class
-  use common_var
-  use LAMMPS
-  use, intrinsic :: ISO_C_binding, only : C_double, C_ptr, C_int
-  implicit none
-  real(8)     :: chi_val_ener,chi_val_fx,chi_val_fy,chi_val_fz
-  integer              :: l,i,k,n,v
-  real (C_double), pointer :: ener => null()
-  real (C_double), pointer :: fx(:) => null()
-  real (C_double), pointer :: fy(:) => null()
-  real (C_double), pointer :: fz(:) => null()
-  real (C_double), pointer   :: id_dbl(:)=> null()
-  integer, allocatable       :: map(:),id(:)
+SUBROUTINE GET_CHI2
+  USE FIT_LAMMPS_CLASS
+  USE COMMON_VAR
+  USE LAMMPS
+  USE, INTRINSIC :: ISO_C_BINDING, ONLY : C_DOUBLE, C_PTR, C_INT
+  IMPLICIT NONE
+  REAL(8)     :: CHI_VAL_ENER, CHI_VAL_FX, CHI_VAL_FY, CHI_VAL_FZ
+  INTEGER     :: L, I, K, N, V
+  REAL(C_DOUBLE), POINTER :: ENER      => NULL()
+  REAL(C_DOUBLE), POINTER :: FX(:)     => NULL()
+  REAL(C_DOUBLE), POINTER :: FY(:)     => NULL()
+  REAL(C_DOUBLE), POINTER :: FZ(:)     => NULL()
+  REAL(C_DOUBLE), POINTER :: ID_DBL(:) => NULL()
+  INTEGER, ALLOCATABLE    :: MAP(:), ID(:)
 
-  chi_val_ener=0.0d0
-  chi_val_fx=0.0d0
-  chi_val_fy=0.0d0
-  chi_val_fz=0.0d0
+  CHI_VAL_ENER = 0.0D0
+  CHI_VAL_FX   = 0.0D0
+  CHI_VAL_FY   = 0.0D0
+  CHI_VAL_FZ   = 0.0D0
 
-  open(222,file='energy_rms.dat')
-  open(333,file='force_rms.dat')
-  write(222,*) 'RMS Energies'
-  write(333,*) 'RMS Forces'
+  OPEN(222, FILE = 'energy_rms.dat')
+  OPEN(333, FILE = 'force_rms.dat')
+  WRITE(222, *) 'RMS Energies'
+  WRITE(333, *) 'RMS Forces'
 
-  !!      calcola chi2
-  do i=1,sys%ndata
+  !!      CALCOLA CHI2
+  DO I = 1, SYS%NDATA
 
-     do l=1,sys%data(i)%frames
+     DO L = 1, SYS%DATA(I)%FRAMES
 
-        call lammps_scatter_atoms (lmp(i),'x',sys%data(i)%x(l,1:3*sys%data(i)%nats))
-        call lammps_command (lmp(i), 'run 0')
+        CALL LAMMPS_SCATTER_ATOMS (LMP(I), 'x', SYS%DATA(I)%X(L, 1:3*SYS%DATA(I)%NATS))
+        CALL LAMMPS_COMMAND (LMP(I), 'run 0')
 
-        if(fit_ener)then
+        IF (FIT_ENER) THEN
 
-           call lammps_extract_compute (ener, lmp(i), 'pe_ener', 0, 0)
+           CALL LAMMPS_EXTRACT_COMPUTE (ENER, LMP(I), 'pe_ener', 0, 0)
 
-           chi_val_ener=chi_val_ener+( (ener-sys%data(i)%ener(l))/sys%data(i)%nats )**2
+           CHI_VAL_ENER = CHI_VAL_ENER + ( (ENER - SYS%DATA(I)%ENER(L)) / SYS%DATA(I)%NATS )**2
 
-           !            write(222,*) i,l,ener/sys%data(i)%nats,sys%data(i)%ener(l)/sys%data(i)%nats,&
-           !                 (ener-sys%data(i)%ener(l))/sys%data(i)%nats
-           write(222,*) i, l, ener, sys%data(i)%ener(l), (ener-sys%data(i)%ener(l)), sys%data(i)%nats
+           !WRITE(222, *) I, L, ENER / SYS%DATA(I)%NATS, SYS%DATA(I)%ENER(L) / SYS%DATA(I)%NATS, (ENER-SYS%DATA(I)%ENER(L)) / SYS%DATA(I)%NATS
+           WRITE(222, *) I, L, ENER, SYS%DATA(I)%ENER(L), (ENER - SYS%DATA(I)%ENER(L)), SYS%DATA(I)%NATS
 
-           ener=>null()
+           ENER => NULL()
 
-        endif
+        END IF
 
-        if(fit_forces)then
+        IF (FIT_FORCES) THEN
 
-           call lammps_extract_compute (fx, lmp(i), 'f_x', 1, 1)
-           call lammps_extract_compute (fy, lmp(i), 'f_y', 1, 1)
-           call lammps_extract_compute (fz, lmp(i), 'f_z', 1, 1)
-           if(.not. allocated(id)) allocate(id(sys%data(i)%nats))
-           if(.not. allocated(map)) allocate(map(sys%data(i)%nats))
-           call lammps_extract_compute (id_dbl, lmp(i), 'id', 1, 1)
+           CALL LAMMPS_EXTRACT_COMPUTE (FX, LMP(I), 'f_x', 1, 1)
+           CALL LAMMPS_EXTRACT_COMPUTE (FY, LMP(I), 'f_y', 1, 1)
+           CALL LAMMPS_EXTRACT_COMPUTE (FZ, LMP(I), 'f_z', 1, 1)
+           IF (.NOT. ALLOCATED(ID))  ALLOCATE(ID(SYS%DATA(I)%NATS))
+           IF (.NOT. ALLOCATED(MAP)) ALLOCATE(MAP(SYS%DATA(I)%NATS))
+           CALL LAMMPS_EXTRACT_COMPUTE (ID_DBL, LMP(I), 'id', 1, 1)
 
-           id=INT(id_dbl)
-           id_dbl=>null()
+           ID = INT(ID_DBL)
+           ID_DBL => NULL()
 
-           do k=1,sys%data(i)%nats
-              map(id(k))=k
-           enddo
+           DO K = 1, SYS%DATA(I)%NATS
+              MAP(ID(K)) = K
+           END DO
 
-           do k=1,sys%data(i)%nats
-              chi_val_fx=chi_val_fx+( fx(map(k))-sys%data(i)%fx(l,k) )**2
-              chi_val_fy=chi_val_fy+( fy(map(k))-sys%data(i)%fy(l,k) )**2
-              chi_val_fz=chi_val_fz+( fz(map(k))-sys%data(i)%fz(l,k) )**2
-              write(333,*) k,fx(map(k)),fy(map(k)),fz(map(k)),sys%data(i)%fx(l,k),sys%data(i)%fy(l,k),sys%data(i)%fz(l,k)
-           enddo
+           DO K = 1, SYS%DATA(I)%NATS
+              CHI_VAL_FX = CHI_VAL_FX + ( FX(MAP(K)) - SYS%DATA(I)%FX(L, K) )**2
+              CHI_VAL_FY = CHI_VAL_FY + ( FY(MAP(K)) - SYS%DATA(I)%FY(L, K) )**2
+              CHI_VAL_FZ = CHI_VAL_FZ + ( FZ(MAP(K)) - SYS%DATA(I)%FZ(L, K) )**2
+              WRITE(333, *) K, FX(MAP(K)), FY(MAP(K)), FZ(MAP(K)), SYS%DATA(I)%FX(L,K), SYS%DATA(I)%FY(L,K), SYS%DATA(I)%FZ(L,K)
+           END DO
 
-           fx=>null()
-           fy=>null()
-           fz=>null()
+           FX => NULL()
+           FY => NULL()
+           FZ => NULL()
 
-        endif
+        END IF
 
-     enddo      ! ciclo su frames
+     END DO      ! CICLO SU FRAMES
 
-     call lammps_close (lmp(i))
-     if(allocated(map)) deallocate(map)
-     if(allocated(id)) deallocate(id)
+     CALL LAMMPS_CLOSE (LMP(I))
+     IF (ALLOCATED(MAP)) DEALLOCATE(MAP)
+     IF (ALLOCATED(ID))  DEALLOCATE(ID)
      PRINT*,'CALCULATING CHI2: LINE => ', I
-  enddo   ! ciclo su data
+  END DO   ! CICLO SU DATA
 
-  if(allocated(lmp)) deallocate(lmp)
+  IF (ALLOCATED(LMP)) DEALLOCATE(LMP)
 
-  write(222,*) 'Total RMS Energies (Kcal/mol/atom):',sqrt(chi_val_ener/sys%tot_frames)
-  write(333,*) 'Total RMS Forces (Kcal/mol/Ang): ',sqrt(chi_val_fx/sys%tot_frames),&
-       sqrt(chi_val_fy/sys%tot_frames),&
-       sqrt(chi_val_fz/sys%tot_frames)
-  close(222)
-  close(333)
+  CHI_VAL_ENER = SQRT(CHI_VAL_ENER / SYS%TOT_FRAMES)
+  !WRITE(222, *) 'Total RMS Energies (Kcal/mol/atom):', SQRT(CHI_VAL_ENER / SYS%TOT_FRAMES)
+  WRITE(222, *) 'Total RMS Energies (Kcal/mol/atom):', CHI_VAL_ENER
+  CLOSE(222)
+  CHI_VAL_FX = SQRT(CHI_VAL_FX/SYS%TOT_FRAMES)
+  CHI_VAL_FY = SQRT(CHI_VAL_FY/SYS%TOT_FRAMES)
+  CHI_VAL_FZ = SQRT(CHI_VAL_FZ/SYS%TOT_FRAMES)
+  !WRITE(333, *) 'Total RMS Forces (Kcal/mol/Ang): ', SQRT(CHI_VAL_FX/SYS%TOT_FRAMES), SQRT(CHI_VAL_FY/SYS%TOT_FRAMES), SQRT(CHI_VAL_FZ/SYS%TOT_FRAMES)
+  WRITE(333, *) 'Total RMS Forces (Kcal/mol/Ang): ', CHI_VAL_FX, CHI_VAL_FY, CHI_VAL_FZ
+  CLOSE(333)
 
-  return
-end subroutine get_chi2
+  RETURN
+END SUBROUTINE GET_CHI2
