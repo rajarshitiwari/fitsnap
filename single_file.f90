@@ -554,375 +554,356 @@ CONTAINS
     RETURN
   END SUBROUTINE REMOVE_NODE
 
-  subroutine rewind_node(this_list)
-    implicit none
-    class(list)  :: this_list
-    if( associated(this_list%node%prev) ) then
-       this_list%node=>this_list%node%prev
-    else
-       this_list%node=>this_list%head
-    endif
-    return
-  end subroutine rewind_node
+  SUBROUTINE REWIND_NODE(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)  :: THIS_LIST
+    IF (ASSOCIATED(THIS_LIST%NODE%PREV)) THEN
+       THIS_LIST%NODE => THIS_LIST%NODE%PREV
+    ELSE
+       THIS_LIST%NODE => THIS_LIST%HEAD
+    END IF
+    RETURN
+  END SUBROUTINE REWIND_NODE
+
+  SUBROUTINE REBOOT_LIST(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)   :: THIS_LIST
+    IF ( ASSOCIATED(THIS_LIST%NODE) &
+         .AND. ASSOCIATED(THIS_LIST%HEAD) ) THEN
+       THIS_LIST%NODE => THIS_LIST%HEAD
+    END IF
+    RETURN
+  END SUBROUTINE REBOOT_LIST
+
+  SUBROUTINE LAST_NODE_LIST(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)   :: THIS_LIST
+    THIS_LIST%NODE => THIS_LIST%TAIL
+    RETURN
+  END SUBROUTINE LAST_NODE_LIST
+
+  SUBROUTINE INIT_LIST(THIS_LIST)
+    IMPLICIT NONE
+    CLASS(LIST)    :: THIS_LIST
+    THIS_LIST%NELEM = 0
+    RETURN
+  END SUBROUTINE INIT_LIST
+
+  SUBROUTINE ADD_NODE(THIS_LIST, VAL)
+    IMPLICIT NONE
+    CLASS(LIST)               :: THIS_LIST
+    CLASS(*), POINTER         :: ARROW
+    CLASS(*), OPTIONAL        :: VAL
+    CLASS(LIST_NODE), POINTER :: TMP_NODE
+
+    IF (THIS_LIST%NELEM .EQ. 0) THEN
+       ALLOCATE(THIS_LIST%HEAD)
+       ALLOCATE(THIS_LIST%NODE)
+       IF (PRESENT(VAL)) THEN
+          SELECT TYPE (VAL)
+          TYPE IS (INTEGER)
+             ALLOCATE(INTEGER::THIS_LIST%HEAD%KEY)
+             ALLOCATE(INTEGER::THIS_LIST%NODE%KEY)
+          TYPE IS (REAL(8))
+             ALLOCATE(REAL(8)::THIS_LIST%HEAD%KEY)
+             ALLOCATE(REAL(8)::THIS_LIST%NODE%KEY)
+          TYPE IS (COMPLEX(8))
+             ALLOCATE(COMPLEX(8)::THIS_LIST%HEAD%KEY)
+             ALLOCATE(COMPLEX(8)::THIS_LIST%NODE%KEY)
+          END SELECT
+       END IF
+       THIS_LIST%NODE => THIS_LIST%HEAD
+       THIS_LIST%TAIL => THIS_LIST%HEAD
+       THIS_LIST%NELEM = THIS_LIST%NELEM + 1
+       TMP_NODE => THIS_LIST%HEAD
+    ELSE
+       ALLOCATE(TMP_NODE)
+       IF (PRESENT(VAL)) THEN
+          SELECT TYPE (VAL)
+          TYPE IS (INTEGER)
+             ALLOCATE(INTEGER::TMP_NODE%KEY)
+          TYPE IS (REAL(8))
+             ALLOCATE(REAL(8)::TMP_NODE%KEY)
+          TYPE IS (COMPLEX(8))
+             ALLOCATE(COMPLEX(8)::TMP_NODE%KEY)
+          END SELECT
+       END IF
+       THIS_LIST%TAIL%NEXT => TMP_NODE
+       TMP_NODE%PREV => THIS_LIST%TAIL
+       THIS_LIST%TAIL => TMP_NODE
+       THIS_LIST%NELEM = THIS_LIST%NELEM + 1
+    END IF
+    
+    IF ( PRESENT(VAL) ) THEN
+       SELECT TYPE (VAL)
+          
+       TYPE IS (INTEGER)
+          SELECT TYPE (ARROW => TMP_NODE%KEY)
+          TYPE IS (INTEGER)
+             ARROW = VAL
+          END SELECT
+       TYPE IS (REAL(8))
+          SELECT TYPE (ARROW => TMP_NODE%KEY)
+          TYPE IS (REAL(8))
+             ARROW = VAL
+          END SELECT
+       TYPE IS (COMPLEX(8))
+          SELECT TYPE (ARROW => TMP_NODE%KEY)
+          TYPE IS (COMPLEX(8))
+             ARROW = VAL
+          END SELECT
+          
+       END SELECT
+    END IF
+    
+    TMP_NODE => NULL()
+    
+    RETURN
+  END SUBROUTINE ADD_NODE
+
+  SUBROUTINE RD_INT_NODE(THIS, VAL)
+    IMPLICIT NONE
+    CLASS(LIST)       :: THIS
+    INTEGER           :: VAL
+    CLASS(*), POINTER :: BHO
+
+    SELECT TYPE (BHO => THIS%NODE%KEY)
+    TYPE IS (INTEGER)
+       VAL = BHO
+    END SELECT
+
+    RETURN
+  END SUBROUTINE RD_INT_NODE
+
+  SUBROUTINE RD_DBL_NODE(THIS, VAL)
+    IMPLICIT NONE
+    CLASS(LIST)       :: THIS
+    REAL(8)           :: VAL
+    CLASS(*), POINTER :: BHO
+
+    SELECT TYPE (BHO => THIS%NODE%KEY)
+    TYPE IS (REAL(8))
+       VAL = BHO
+    END SELECT
+
+    RETURN
+  END SUBROUTINE RD_DBL_NODE
+
+  SUBROUTINE RD_CMPLX_NODE(THIS, VAL)
+    IMPLICIT NONE
+    CLASS(LIST)       :: THIS
+    COMPLEX(8)        :: VAL
+    CLASS(*), POINTER :: BHO
+
+    SELECT TYPE (BHO => THIS%NODE%key)
+    TYPE IS (COMPLEX(8))
+       VAL = BHO
+    END SELECT
+
+    RETURN
+  END SUBROUTINE RD_CMPLX_NODE
 
 
-  subroutine reboot_list(this_list)
-    implicit none
-    class(list)   :: this_list
-    if ( associated(this_list%node) &
-         .and. associated(this_list%head )  ) then
-       this_list%node=>this_list%head
-    endif
-    return
-  end subroutine reboot_list
+END MODULE LISTS_CLASS
 
+MODULE META_CLASS
+  USE LISTS_CLASS
+  IMPLICIT NONE
 
-  subroutine last_node_list(this_list)
-    implicit none
-    class(list)   :: this_list
-    this_list%node=>this_list%tail
-    return
-  end subroutine last_node_list
+  TYPE MEMORY_POT
+     TYPE(LIST) :: GAUSS
+     REAL(8)    :: WEIGHT = 1.0D0
+     REAL(8)    :: SIGMA  = 0.2D0
+  END TYPE MEMORY_POT
 
+  TYPE(MEMORY_POT) :: META1, META2
+  LOGICAL          :: DO_META = .TRUE.
+  REAL(8)          :: DIST1, DIST2, HEIGHT1, HEIGHT2
+  REAL(8)          :: F1(3), F2(3), F3(3)
 
-  subroutine init_list(this_list)
-    implicit none
-    class(list)    :: this_list
-    this_list%nelem=0
-    return
-  end subroutine init_list
+END MODULE META_CLASS
 
+SUBROUTINE GET_LSMF_SNAP
+  USE FIT_LAMMPS_CLASS
+  USE LAPACK_DIAG_SIMM
+  USE LAPACK_INVERSE
+  USE COMMON_VAR
+  USE LAMMPS
+  USE, INTRINSIC :: ISO_C_BINDING, ONLY : C_DOUBLE, C_PTR, C_INT
+  IMPLICIT NONE
+  INTEGER                :: AAA, BBB, L, I, K, N, V, S, T, LL, TT
+  INTEGER                :: SS, VV, INF, LWORK, DIMA, DIMB
+  REAL(8), ALLOCATABLE   :: X(:), B(:), A(:,:), WORK(:), AA(:,:)
+  REAL(8), ALLOCATABLE   :: W(:), TVAL(:,:), YY(:,:), Y(:,:), A2(:,:)
+  REAL(8), ALLOCATABLE   :: ACM(:,:), BCM(:), BB(:)
+  REAL(8)                :: DUMP, AVE
 
-  subroutine add_node(this_list,val)
-    implicit none
-    class(list)                    :: this_list
-    class(*),pointer               :: arrow
-    class(*),optional              :: val
-    class(list_node),pointer       :: tmp_node
+  REAL (C_DOUBLE), POINTER   :: ENER(:,:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: F(:,:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: KIND_NAT(:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: EREF => NULL()
+  REAL (C_DOUBLE), POINTER   :: FX_REF(:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: FY_REF(:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: FZ_REF(:) => NULL()
+  REAL (C_DOUBLE), POINTER   :: ID_DBL(:)=> NULL()
+  INTEGER, ALLOCATABLE       :: MAP(:), ID(:)
 
-    if(this_list%nelem.eq.0)then
-       allocate(this_list%head)
-       allocate(this_list%node)
-       if(present(val))then
-          select type (val)
-          type is (integer)
-             allocate(integer::this_list%head%key)
-             allocate(integer::this_list%node%key)
-          type is (real(8))
-             allocate(real(8)::this_list%head%key)
-             allocate(real(8)::this_list%node%key)
-          type is (complex(8))
-             allocate(complex(8)::this_list%head%key)
-             allocate(complex(8)::this_list%node%key)
-          end select
-       endif
-       this_list%node=>this_list%head
-       this_list%tail=>this_list%head
-       this_list%nelem=this_list%nelem+1
-       tmp_node=>this_list%head
-    else
-       allocate(tmp_node)
-       if(present(val))then
-          select type (val)
-          type is (integer)
-             allocate(integer::tmp_node%key)
-          type is (real(8))
-             allocate(real(8)::tmp_node%key)
-          type is (complex(8))
-             allocate(complex(8)::tmp_node%key)
-          end select
-       endif
-       this_list%tail%next=>tmp_node
-       tmp_node%prev=>this_list%tail
-       this_list%tail=>tmp_node
-       this_list%nelem=this_list%nelem+1
-    endif
+  INTEGER                         :: NKINDS, BI_ORDER, NPAR, NPAR2FIT, TOT_FRAMES
+  INTEGER                         :: NATS2FIT, QUADFLAG
+  REAL(8)                         :: GEN_CUTOFF
+  CHARACTER(LEN=10000)            :: SNAP_STRING, SNAP_STRING2
+  REAL(8), ALLOCATABLE            :: CUTOFF(:), RADII(:), SIGMA(:)
+  INTEGER, ALLOCATABLE            :: KIND_COUNT(:), TYPE2FIT(:)
+  CHARACTER(LEN=2), ALLOCATABLE   :: LABEL(:)
 
+  TOT_FRAMES = SYS%TOT_FRAMES
+  NPAR2FIT   = SYS%NPAR2FIT
 
+  IF(PRINT_BI) OPEN(121, FILE='Bi_compoenents.dat')
 
-    if ( present(val) ) then
-       select type (val)
+  OPEN(16, FILE = SYS%INP_FIT)
+  READ(16, *) GEN_CUTOFF, BI_ORDER, NPAR, QUADFLAG
+  READ(16, *) NKINDS
+  ALLOCATE(LABEL(NKINDS))
+  ALLOCATE(TYPE2FIT(NKINDS))
+  ALLOCATE(CUTOFF(NKINDS))
+  ALLOCATE(SIGMA(NKINDS))
+  ALLOCATE(RADII(NKINDS))
+  ALLOCATE(KIND_COUNT(NKINDS))
+  KIND_COUNT = 0
+  DO I = 1, NKINDS
+     READ(16,*) LABEL(I), TYPE2FIT(I), RADII(I), CUTOFF(I), SIGMA(I)
+     WRITE(*,*) LABEL(I), TYPE2FIT(I), RADII(I), CUTOFF(I), SIGMA(I)
+  END DO
+  CLOSE(16)
+  WRITE(SNAP_STRING, *) GEN_CUTOFF, '1.0000', BI_ORDER, (RADII(I), I = 1, NKINDS),&
+       & (CUTOFF(I), I = 1, NKINDS), 'quadraticflag ', QUADFLAG
+  WRITE(SNAP_STRING2, *) (TYPE2FIT(I), I = 1, NKINDS)
+  WRITE(*,*) TRIM(SNAP_STRING)
+  WRITE(*,*) 'Fitting types: ',TRIM(SNAP_STRING2)
 
-       type is (integer)
-          select type (arrow=>tmp_node%key)
-          type is (integer)
-             arrow=val
-          end select
-       type is (real(8))
-          select type (arrow=>tmp_node%key)
-          type is (real(8))
-             arrow=val
-          end select
-       type is (complex(8))
-          select type (arrow=>tmp_node%key)
-          type is (complex(8))
-             arrow=val
-          end select
+  IF ( .NOT. SKIP_FIT ) THEN
+     OPEN(222, FILE = 'snapcoeff')
+     WRITE(222, *) NKINDS, NPAR
+     DO I = 1, NKINDS
+        WRITE(222,*) LABEL(I), RADII(I), CUTOFF(I)
+        DO N = 1, NPAR
+           WRITE(222, *) 0.0D0
+        END DO
+     END DO
+     FLUSH(222)
+     CLOSE(222)
+  END IF
 
-       end select
-    endif
-
-    tmp_node=>null()
-
-    return
-  end subroutine add_node
-
-
-  subroutine rd_int_node(this,val)
-    implicit none
-    class(list)           :: this
-    integer               :: val
-    class(*),pointer      :: bho
-
-    select type (bho=>this%node%key)
-    type is (integer)
-       val=bho
-    end select
-
-    return
-  end subroutine rd_int_node
-
-  subroutine rd_dbl_node(this,val)
-    implicit none
-    class(list)           :: this
-    real(8)      :: val
-    class(*),pointer      :: bho
-
-    select type (bho=>this%node%key)
-    type is (real(8))
-       val=bho
-    end select
-
-    return
-  end subroutine rd_dbl_node
-
-  subroutine rd_cmplx_node(this,val)
-    implicit none
-    class(list)           :: this
-    complex(8)            :: val
-    class(*),pointer      :: bho
-
-    select type (bho=>this%node%key)
-    type is (complex(8))
-       val=bho
-    end select
-
-    return
-  end subroutine rd_cmplx_node
-
-
-end module lists_class
-
-module meta_class
-  use lists_class
-  implicit none
-
-  type memory_pot
-     type(list)           :: gauss
-     real(8)     :: weight=1.0
-     real(8)     :: sigma=0.2
-  end type memory_pot
-
-  type(memory_pot)                :: meta1,meta2
-  logical                         :: do_meta=.true.
-  real(8)                :: dist1,dist2,height1,height2
-  real(8)                :: f1(3),f2(3),f3(3)
-
-end module meta_class
-
-subroutine get_lsmf_snap
-  use fit_lammps_class
-  use lapack_diag_simm
-  use lapack_inverse
-  use common_var
-  use LAMMPS
-  use, intrinsic :: ISO_C_binding, only : C_double, C_ptr, C_int
-  implicit none
-  integer                         :: aaa,bbb,l,i,k,n,v,s,t,ll,tt
-  integer                         :: ss,vv,inf,LWORK,dimA,dimB
-  real(8), allocatable   :: x(:),B(:),A(:,:),work(:),AA(:,:)
-  real(8), allocatable   :: W(:),Tval(:,:),YY(:,:),Y(:,:),A2(:,:)
-  real(8), allocatable   :: ACM(:,:),BCM(:),BB(:)
-  real(8)                :: dump,ave
-
-  real (C_double), pointer   :: ener(:,:) => null()
-  real (C_double), pointer   :: f(:,:) => null()
-  real (c_double), pointer   :: kind_nat(:) => null()
-  real (c_double), pointer   :: Eref => null()
-  real (C_double), pointer   :: fx_ref(:) => null()
-  real (C_double), pointer   :: fy_ref(:) => null()
-  real (C_double), pointer   :: fz_ref(:) => null()
-  real (C_double), pointer   :: id_dbl(:)=> null()
-  integer, allocatable       :: map(:),id(:)
-
-  integer                         :: nkinds,bi_order,npar,npar2fit,tot_frames
-  integer                         :: nats2fit,quadflag
-  real(8)                :: gen_cutoff
-  character (len=10000)           :: snap_string,snap_string2
-  real(8), allocatable   :: cutoff(:),radii(:),sigma(:)
-  integer, allocatable            :: kind_count(:),type2fit(:)
-  character (len=2),allocatable   :: label(:)
-
-
-  tot_frames=sys%tot_frames
-  npar2fit=sys%npar2fit
-
-  if(print_bi) open(121,file='Bi_compoenents.dat')
-
-  open(16,file=sys%inp_fit)
-  read(16,*) gen_cutoff,bi_order,npar,quadflag
-  read(16,*) nkinds
-  allocate(label(nkinds))
-  allocate(type2fit(nkinds))
-  allocate(cutoff(nkinds))
-  allocate(sigma(nkinds))
-  allocate(radii(nkinds))
-  allocate(kind_count(nkinds))
-  kind_count=0
-  do i=1,nkinds
-     read(16,*) label(i),type2fit(i),radii(i),cutoff(i),sigma(i)
-     write(*,*) label(i),type2fit(i),radii(i),cutoff(i),sigma(i)
-  enddo
-  close(16)
-  write(snap_string,*) gen_cutoff,'1.0000',bi_order,(radii(i),i=1,nkinds),(cutoff(i),i=1,nkinds),&
-       'quadraticflag ',quadflag
-  write(snap_string2,*) (type2fit(i),i=1,nkinds)
-  write(*,*) trim(snap_string)
-  write(*,*) 'Fitting types: ',trim(snap_string2)
-
-  if(.not.skip_fit)then
-
-     open(222,file='snapcoeff')
-
-     write(222,*) nkinds,npar
-     do i =1,nkinds
-        write(222,*) label(i),radii(i),cutoff(i)
-        do n=1,npar
-           write(222,*) 0.0000000
-        enddo
-     enddo
-     flush(222)
-
-     close(222)
-
-  endif
-
-
-  allocate(lmp(sys%ndata))
+  ALLOCATE(LMP(SYS%NDATA))
 
   PRINT*,'INITIALIZING LAMMPS POINTERS: TOTAL = ', SYS%NDATA
-  do i=1,sys%ndata
+  DO I = 1, SYS%NDATA
 
-     call lammps_open_no_mpi ('lmp -log none -screen none', lmp(i))
-     call lammps_file (lmp(i),sys%inp)
-     call lammps_command (lmp(i),'read_data '//trim(sys%data(i)%inp_data))
-     call lammps_command (lmp(i),'group fitsnap type '//trim(snap_string2))
-     call lammps_file (lmp(i),sys%inp_fix)
-     call lammps_command (lmp(i), &
-          'compute sna_e all sna/atom '//trim(snap_string)//&
+     CALL LAMMPS_OPEN_NO_MPI ('lmp -log none -screen none', LMP(I))
+     CALL LAMMPS_FILE (LMP(I), SYS%INP)
+     CALL LAMMPS_COMMAND (LMP(I), 'read_data ' // tRIM(SYS%DATA(I)%INP_DATA))
+     CALL LAMMPS_COMMAND (LMP(I), 'group fitsnap type ' // TRIM(SNAP_STRING2))
+     CALL LAMMPS_FILE (LMP(I), SYS%INP_FIX)
+     CALL LAMMPS_COMMAND (LMP(I), &
+          'compute sna_e all sna/atom ' // TRIM(SNAP_STRING) //&
           ' diagonal 3 rmin0 0 switchflag 1')
-     call lammps_command (lmp(i),&
-          'compute type all property/atom type')
-     call lammps_command (lmp(i),&
-          'compute id all property/atom id')
-     call lammps_command (lmp(i), 'compute pe_ener all pe')
+     CALL LAMMPS_COMMAND (LMP(I), 'compute type all property/atom type')
+     CALL LAMMPS_COMMAND (LMP(I), 'compute id all property/atom id')
+     CALL LAMMPS_COMMAND (LMP(I), 'compute pe_ener all pe')
 
-     if(fit_forces)then
-        call lammps_command (lmp(i), &
-             'compute sna_f all snad/atom '//trim(snap_string)//&
+     IF (FIT_FORCES) THEN
+        CALL LAMMPS_COMMAND (LMP(I), &
+             'compute sna_f all snad/atom ' // TRIM(SNAP_STRING)//&
              ' diagonal 3 rmin0 0 switchflag 1')
-        call lammps_command (lmp(i), &
-             'compute f_x all property/atom fx')
-        call lammps_command (lmp(i), &
-             'compute f_y all property/atom fy')
-        call lammps_command (lmp(i), &
-             'compute f_z all property/atom fz')
-     endif
+        CALL LAMMPS_COMMAND (LMP(I), 'compute f_x all property/atom fx')
+        CALL LAMMPS_COMMAND (LMP(I), 'compute f_y all property/atom fy')
+        CALL LAMMPS_COMMAND (LMP(I), 'compute f_z all property/atom fz')
+     END IF
 
-  enddo
+  END DO
 
 
-!!! do kernel
+  !! DO KERNEL !!
 
-  if(refine)then
+  IF (REFINE) THEN
 
-     call kernel%dealloc()
+     CALL KERNEL%DEALLOC()
 
-     kernel%nkinds=nkinds
-     allocate(kernel%K(nkinds))
-     do i=1,nkinds
-        kernel%K(i)%sigma=sigma(i)
-        kernel%K(i)%nenvs=0
-     enddo
+     KERNEL%NKINDS = NKINDS
+     ALLOCATE(KERNEL%K(NKINDS))
+     DO I = 1, NKINDS
+        KERNEL%K(I)%SIGMA = SIGMA(I)
+        KERNEL%K(I)%NENVS = 0
+     END DO
 
-     do i=1,sys%ndata
-        call lammps_command (lmp(i), 'run 0')
-        call lammps_extract_compute (kind_nat, lmp(i), 'type', 1, 1)
-        call lammps_extract_compute (ener, lmp(i), 'sna_e', 1, 2)
-        kind_count=0
-        do t=1,sys%data(i)%nats
-           kind_count(nint(kind_nat(t)))=kind_count(nint(kind_nat(t)))+1
-        enddo
-        do t=1,nkinds
-           kernel%K(t)%nenvs=kernel%K(t)%nenvs+kind_count(t)*sys%data(i)%frames
-        enddo
-     enddo
-     do t=1,nkinds
-        allocate(kernel%K(t)%B(kernel%K(t)%nenvs,size(ener,1)))
-     enddo
+     DO I = 1, SYS%NDATA
+        CALL LAMMPS_COMMAND (LMP(I), 'run 0')
+        CALL LAMMPS_EXTRACT_COMPUTE (KIND_NAT, LMP(I), 'type', 1, 1)
+        CALL LAMMPS_EXTRACT_COMPUTE (ENER, LMP(I), 'sna_e', 1, 2)
+        KIND_COUNT = 0
+        DO T = 1, SYS%DATA(I)%NATS
+           KIND_COUNT(NINT(KIND_NAT(T))) = KIND_COUNT(NINT(KIND_NAT(T))) + 1
+        END DO
+        DO T = 1, NKINDS
+           KERNEL%K(T)%NENVS = KERNEL%K(T)%NENVS + KIND_COUNT(T) * SYS%DATA(I)%FRAMES
+        END DO
+     END DO
+     DO T = 1, NKINDS
+        ALLOCATE(KERNEL%K(T)%B(KERNEL%K(T)%NENVS, SIZE(ENER,1)))
+     END DO
 
-     do i=1,nkinds
-        kernel%K(i)%nenvs=0
-     enddo
+     DO I = 1, NKINDS
+        KERNEL%K(I)%NENVS = 0
+     END DO
 
-     do i=1,sys%ndata
-        do l=1,sys%data(i)%frames
+     DO I = 1, SYS%NDATA
+        DO L = 1, SYS%DATA(I)%FRAMES
 
-           call lammps_scatter_atoms (lmp(i),'x',sys%data(i)%x(l,1:3*sys%data(i)%nats))
-           call lammps_command (lmp(i), 'run 0')
-           call lammps_extract_compute (kind_nat, lmp(i), 'type', 1, 1)
-           call lammps_extract_compute (ener, lmp(i), 'sna_e', 1, 2)
-           call lammps_extract_compute (Eref, lmp(i), 'pe_ener', 0, 0)
-           if(.not. allocated(id)) allocate(id(sys%data(i)%nats))
-           if(.not. allocated(map)) allocate(map(sys%data(i)%nats))
-           call lammps_extract_compute (id_dbl, lmp(i), 'id', 1, 1)
+           CALL LAMMPS_SCATTER_ATOMS (LMP(I), 'x', SYS%DATA(I)%X(L, 1:3*SYS%DATA(I)%NATS))
+           CALL LAMMPS_COMMAND (LMP(I), 'run 0')
+           CALL LAMMPS_EXTRACT_COMPUTE (KIND_NAT, LMP(I), 'type', 1, 1)
+           CALL LAMMPS_EXTRACT_COMPUTE (ENER, LMP(I), 'sna_e', 1, 2)
+           CALL LAMMPS_EXTRACT_COMPUTE (EREF, LMP(I), 'pe_ener', 0, 0)
+           IF (.NOT. ALLOCATED(ID))  ALLOCATE(ID(SYS%DATA(I)%NATS))
+           IF (.NOT. ALLOCATED(MAP)) ALLOCATE(MAP(SYS%DATA(I)%NATS))
+           CALL LAMMPS_EXTRACT_COMPUTE (ID_DBL, LMP(I), 'id', 1, 1)
 
-           id=INT(id_dbl)
-           id_dbl=>null()
+           ID = INT(ID_DBL)
+           ID_DBL => NULL()
 
-           do k=1,sys%data(i)%nats
-              map(id(k))=k
-           enddo
+           DO K = 1, SYS%DATA(I)%NATS
+              MAP(ID(K)) = K
+           END DO
 
-           do t=1,sys%data(i)%nats
-              v=kernel%K(nint(kind_nat(map(t))))%nenvs+1
-              do k=1,size(ener,1)
-                 kernel%K(nint(kind_nat(map(t))))%B(v,k)=ener(k,map(t))
-              enddo
-              kernel%K(nint(kind_nat(map(t))))%nenvs=&
-                   kernel%K(nint(kind_nat(map(t))))%nenvs+1
-           enddo
+           DO T = 1, SYS%DATA(I)%NATS
+              V = KERNEL%K(NINT(KIND_NAT(MAP(T))))%NENVS + 1
+              DO K = 1, SIZE(ENER, 1)
+                 KERNEL%K(NINT(KIND_NAT(MAP(T))))%B(V, K) = ENER(K, MAP(T))
+              END DO
+              KERNEL%K(NINT(KIND_NAT(MAP(T))))%NENVS = KERNEL%K(NINT(KIND_NAT(MAP(T))))%NENVS + 1
+           END DO
 
-           id_dbl=>null()
-           ener=>null()
-           Eref=>null()
-           kind_nat=>null()
+           ID_DBL   => NULL()
+           ENER     => NULL()
+           EREF     => NULL()
+           KIND_NAT => NULL()
 
-        enddo
+        END DO
 
-        deallocate(id)
-        deallocate(map)
+        DEALLOCATE(ID)
+        DEALLOCATE(MAP)
 
-     enddo
+     END DO
 
-  endif ! refine
+  END IF ! REFINE
 
-!!! do fitting
+  !! DO FITTING !!
 
-  if(.not.skip_fit)then
+  IF (.NOT. SKIP_FIT) THEN
 
-     v=1
-     vv=1
+     V = 1
+     VV = 1
 
      do i=1,sys%ndata
 
