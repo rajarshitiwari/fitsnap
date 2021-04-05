@@ -931,9 +931,9 @@ SUBROUTINE GET_LSMF_SNAP
               KIND_COUNT = 0
 
               DO T=1,SYS%DATA(I)%NATS
-                 KIND_COUNT(NINT(KIND_NAT(T)))=KIND_COUNT(NINT(KIND_NAT(T)))+1
+                 KIND_COUNT(NINT(KIND_NAT(T))) = KIND_COUNT(NINT(KIND_NAT(T))) + 1
               ENDDO
-
+              
               DIMA = NPAR * NKINDS
               DIMB = NPAR2FIT
 
