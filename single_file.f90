@@ -1619,8 +1619,8 @@ PROGRAM FITSNAP
      ITER = ITER + 1
 
   END DO
-
-  RETURN
+  WRITE(*, '("fitsnap.x done")')
+  
 END PROGRAM FITSNAP
 
 SUBROUTINE GET_CHI2
